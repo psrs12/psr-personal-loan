@@ -234,6 +234,28 @@ Possible information:
 
 ---
 
+## FR-005 Create Intake Context
+
+The system shall create an application intake context.
+
+Example:
+
+```json
+{
+ "intakeId":"INT123",
+
+ "source":"INVITATION",
+
+ "invitationId":"ITA123",
+
+ "offerId":"OFF456",
+
+ "customerReferenceId":"CUST789"
+}
+```
+
+---
+
 # 7. Business Rules
 
 ## BR-001
@@ -274,61 +296,43 @@ Direct applications must follow a separate intake path.
 
 ---
 
-## BR-007
-
-Prefill data is limited to customer name and address only.
-
-Phone and email are not prefilled. The applicant must enter their own
-contact details when completing the application form.
-
-Prefill fields are read-only on the application form. This ensures
-the application is being created by the person to whom the offer was sent.
-
----
-
-## BR-008
-
-An invitation may only be used to create one active application at a time.
-
-An active application is any application in the following statuses:
-
-```
-CREATED
-IN_PROGRESS
-READY_FOR_SUBMISSION
-SUBMITTED
-PROCESSING
-```
-
-If an active application already exists for the invitation, the system
-shall reject the intake request with error DUPLICATE_APPLICATION.
-
-If the prior application from the same invitation has reached a terminal
-status (CANCELLED or EXPIRED), the invitation may be used again to start
-a new application.
-
----
-
-## BR-009
-
-An InvitationSession expires 30 minutes after creation if the application
-has not been created within that window.
-
-An expired session cannot be used to create an application.
-
-The prospect must re-initialize the invitation to obtain a new session.
-
-Session expiration is independent of invitation expiration. Both conditions
-must be checked at application creation time:
-
-* Invitation must not be expired (offer expiration date).
-* Session must not be expired (30-minute window).
-
----
-
 # 8. Domain Model
 
-See `02-domain-model.md` for the authoritative definition of all aggregates including ApplicationIntakeContext, InvitationSession, and Application.
+## ApplicationIntakeContext
+
+Represents the origin and initialization state of an application journey.
+
+Attributes:
+
+```
+intakeId
+
+applicationSource
+
+invitationId
+
+offerId
+
+customerReferenceId
+
+status
+
+createdTimestamp
+```
+
+---
+
+## Application Source
+
+Values:
+
+```
+INVITATION
+
+DIRECT
+
+PARTNER
+```
 
 ---
 
@@ -336,22 +340,11 @@ See `02-domain-model.md` for the authoritative definition of all aggregates incl
 
 ## Intake Status
 
-See `02-domain-model.md` InvitationSession for the authoritative status model.
-
 ```
-RECEIVED
-
-VALIDATED
-
-OFFER_RETRIEVED
-
-CUSTOMER_RETRIEVED
-
-COMPLETED
-
-FAILED
-
-EXPIRED
+* VALIDATED
+* COMPLETED
+* FAILED
+* EXPIRED
 ```
 
 ---
