@@ -1,0 +1,672 @@
+```yaml
+# acquisition/invitation-to-apply/007-invitation-to-apply-openapi.yaml
+
+openapi: 3.0.3
+
+info:
+  title: Personal Loan Acquisition - Invitation To Apply API
+  description: |
+    API contract for Invitation To Apply capability.
+
+    Responsibilities:
+    - Validate invitation
+    - Retrieve offer information
+    - Retrieve applicant prefill data
+    - Start application journey
+
+  version: 1.0.0
+
+servers:
+  - url: https://api.company.com/acquisition/v1
+    description: Production
+
+  - url: https://api-dev.company.com/acquisition/v1
+    description: Development
+
+
+tags:
+
+  - name: Invitation
+    description: Invitation validation operations
+
+  - name: Application
+    description: Application initiation operations
+
+
+paths:
+
+  /invitations/validate:
+
+    post:
+
+      tags:
+        - Invitation
+
+      summary: Validate invitation
+
+      operationId: validateInvitation
+
+      security:
+        - oauth2:
+            - invitation.read
+
+      parameters:
+
+        - $ref: '#/components/parameters/CorrelationId'
+
+      requestBody:
+
+        required: true
+
+        content:
+
+          application/json:
+
+            schema:
+
+              $ref: '#/components/schemas/InvitationValidationRequest'
+
+
+      responses:
+
+
+        '200':
+
+          description: Invitation validated
+
+          content:
+
+            application/json:
+
+              schema:
+
+                $ref: '#/components/schemas/InvitationValidationResponse'
+
+
+        '400':
+
+          description: Invalid invitation format
+
+          content:
+
+            application/json:
+
+              schema:
+
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+        '404':
+
+          description: Invitation not found
+
+          content:
+
+            application/json:
+
+              schema:
+
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+  /invitations/{invitationId}/offer:
+
+
+    get:
+
+      tags:
+
+        - Invitation
+
+
+      summary: Retrieve offer associated with invitation
+
+
+      operationId: getInvitationOffer
+
+
+      security:
+
+        - oauth2:
+            - offer.read
+
+
+      parameters:
+
+
+        - name: invitationId
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+        - $ref: '#/components/parameters/CorrelationId'
+
+
+
+      responses:
+
+
+        '200':
+
+          description: Offer retrieved
+
+
+          content:
+
+            application/json:
+
+
+              schema:
+
+                $ref: '#/components/schemas/OfferResponse'
+
+
+
+        '422':
+
+          description: Offer expired or inactive
+
+
+          content:
+
+            application/json:
+
+
+              schema:
+
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
+  /invitations/{invitationId}/applicant:
+
+
+    get:
+
+
+      tags:
+
+        - Invitation
+
+
+      summary: Retrieve applicant prefill information
+
+
+      operationId: getApplicantSnapshot
+
+
+      security:
+
+        - oauth2:
+            - applicant.read
+
+
+      parameters:
+
+
+        - name: invitationId
+
+          in: path
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+
+        - $ref: '#/components/parameters/CorrelationId'
+
+
+
+      responses:
+
+
+        '200':
+
+          description: Applicant information retrieved
+
+
+          content:
+
+            application/json:
+
+
+              schema:
+
+                $ref: '#/components/schemas/ApplicantResponse'
+
+
+
+  /applications/start:
+
+
+    post:
+
+
+      tags:
+
+        - Application
+
+
+      summary: Start application from invitation
+
+
+      operationId: startApplication
+
+
+      security:
+
+        - oauth2:
+            - application.create
+
+
+      parameters:
+
+
+        - $ref: '#/components/parameters/CorrelationId'
+
+
+        - name: Idempotency-Key
+
+          in: header
+
+          required: true
+
+          schema:
+
+            type: string
+
+
+
+      requestBody:
+
+
+        required: true
+
+
+        content:
+
+
+          application/json:
+
+
+            schema:
+
+              $ref: '#/components/schemas/ApplicationStartRequest'
+
+
+
+      responses:
+
+
+        '201':
+
+          description: Application created
+
+
+          content:
+
+            application/json:
+
+
+              schema:
+
+                $ref: '#/components/schemas/ApplicationStartResponse'
+
+
+
+        '409':
+
+          description: Duplicate application
+
+
+          content:
+
+            application/json:
+
+
+              schema:
+
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+
+components:
+
+
+
+  securitySchemes:
+
+
+    oauth2:
+
+
+      type: oauth2
+
+      flows:
+
+
+        clientCredentials:
+
+          tokenUrl: https://auth.company.com/oauth/token
+
+          scopes:
+
+            invitation.read: Read invitation
+
+            offer.read: Read offer
+
+            applicant.read: Read applicant
+
+            application.create: Create application
+
+
+
+  parameters:
+
+
+    CorrelationId:
+
+
+      name: X-Correlation-ID
+
+      in: header
+
+      required: true
+
+      schema:
+
+        type: string
+
+
+
+  schemas:
+
+
+
+    InvitationValidationRequest:
+
+
+      type: object
+
+
+      required:
+
+        - invitationId
+
+
+      properties:
+
+
+        invitationId:
+
+          type: string
+
+          example: INV-123456789
+
+
+
+    InvitationValidationResponse:
+
+
+      type: object
+
+
+      properties:
+
+
+        invitationId:
+
+          type: string
+
+
+        status:
+
+          type: string
+
+          enum:
+
+            - VALID
+            - INVALID
+            - EXPIRED
+            - USED
+
+
+        offerId:
+
+          type: string
+
+
+        expirationDate:
+
+          type: string
+
+          format: date
+
+
+
+    OfferResponse:
+
+
+      type: object
+
+
+      properties:
+
+
+        offerId:
+
+          type: string
+
+
+        status:
+
+          type: string
+
+          enum:
+
+            - ACTIVE
+            - EXPIRED
+            - INACTIVE
+
+
+        amount:
+
+
+          type: object
+
+
+          properties:
+
+
+            minimum:
+
+              type: number
+
+
+            maximum:
+
+              type: number
+
+
+
+        apr:
+
+          type: number
+
+
+        termMonths:
+
+          type: integer
+
+
+        expirationDate:
+
+          type: string
+
+          format: date
+
+
+
+    ApplicantResponse:
+
+
+      type: object
+
+
+      properties:
+
+
+        firstName:
+
+          type: string
+
+
+        lastName:
+
+          type: string
+
+
+        address:
+
+
+          $ref: '#/components/schemas/Address'
+
+
+
+    Address:
+
+
+      type: object
+
+
+      properties:
+
+
+        line1:
+
+          type: string
+
+
+        line2:
+
+          type: string
+
+
+        city:
+
+          type: string
+
+
+        state:
+
+          type: string
+
+
+        postalCode:
+
+          type: string
+
+
+
+    ApplicationStartRequest:
+
+
+      type: object
+
+
+      required:
+
+
+        - invitationId
+
+        - offerId
+
+
+      properties:
+
+
+        invitationId:
+
+          type: string
+
+
+        offerId:
+
+          type: string
+
+
+
+    ApplicationStartResponse:
+
+
+      type: object
+
+
+      properties:
+
+
+        applicationId:
+
+          type: string
+
+
+        status:
+
+
+          type: string
+
+
+          example: STARTED
+
+
+        applicant:
+
+
+          $ref: '#/components/schemas/ApplicantResponse'
+
+
+
+    ErrorResponse:
+
+
+      type: object
+
+
+      properties:
+
+
+        error:
+
+
+          type: object
+
+
+          properties:
+
+
+            code:
+
+              type: string
+
+
+            message:
+
+              type: string
+
+
+            correlationId:
+
+              type: string
+```
