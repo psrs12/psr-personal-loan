@@ -317,7 +317,7 @@ Microservices:
 ```
 application-service
 
-invitation-service
+
 
 offer-acceptance-service
 
@@ -518,8 +518,6 @@ CI/CD enabled
 Environment separation:
 
 DEV
-
-TEST
 
 QA
 
