@@ -1,6 +1,9 @@
 package com.personalloan.applicationmanagement.infrastructure.persistence.application;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -27,6 +30,22 @@ public class ApplicationJpaEntity {
     @Column(name = "updated_timestamp")
     private LocalDateTime updatedTimestamp;
 
+    @Column(name = "soft_pull_credit_report_reference_id")
+    private String softPullCreditReportReferenceId;
+
+    @Column(name = "hard_pull_credit_report_reference_id")
+    private String hardPullCreditReportReferenceId;
+
+    @Column(name = "campaign_offer_id")
+    private String campaignOfferId;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "campaign_offer_terms", columnDefinition = "jsonb")
+    private String campaignOfferTerms;
+
+    @Column(name = "application_expiry_date")
+    private LocalDateTime applicationExpiryDate;
+
     public UUID getApplicationId() { return applicationId; }
     public void setApplicationId(UUID applicationId) { this.applicationId = applicationId; }
     public UUID getIntakeId() { return intakeId; }
@@ -39,4 +58,14 @@ public class ApplicationJpaEntity {
     public void setCreatedTimestamp(LocalDateTime createdTimestamp) { this.createdTimestamp = createdTimestamp; }
     public LocalDateTime getUpdatedTimestamp() { return updatedTimestamp; }
     public void setUpdatedTimestamp(LocalDateTime updatedTimestamp) { this.updatedTimestamp = updatedTimestamp; }
+    public String getSoftPullCreditReportReferenceId() { return softPullCreditReportReferenceId; }
+    public void setSoftPullCreditReportReferenceId(String ref) { this.softPullCreditReportReferenceId = ref; }
+    public String getHardPullCreditReportReferenceId() { return hardPullCreditReportReferenceId; }
+    public void setHardPullCreditReportReferenceId(String ref) { this.hardPullCreditReportReferenceId = ref; }
+    public String getCampaignOfferId() { return campaignOfferId; }
+    public void setCampaignOfferId(String campaignOfferId) { this.campaignOfferId = campaignOfferId; }
+    public String getCampaignOfferTerms() { return campaignOfferTerms; }
+    public void setCampaignOfferTerms(String campaignOfferTerms) { this.campaignOfferTerms = campaignOfferTerms; }
+    public LocalDateTime getApplicationExpiryDate() { return applicationExpiryDate; }
+    public void setApplicationExpiryDate(LocalDateTime applicationExpiryDate) { this.applicationExpiryDate = applicationExpiryDate; }
 }

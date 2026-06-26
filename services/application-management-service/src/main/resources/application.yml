@@ -48,6 +48,7 @@ integration:
 kafka:
   topics:
     application-events: application-events
+    consent-events: consent-events
 
 session:
   expiration-minutes: 30

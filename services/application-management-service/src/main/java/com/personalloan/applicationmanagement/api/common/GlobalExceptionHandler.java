@@ -1,5 +1,6 @@
 package com.personalloan.applicationmanagement.api.common;
 
+import com.personalloan.applicationmanagement.application.pricing.*;
 import com.personalloan.applicationmanagement.domain.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,26 @@ import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ApplicationNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleApplicationNotFound(ApplicationNotFoundException ex) {
+        return response(HttpStatus.NOT_FOUND, "APPLICATION_NOT_FOUND", ex.getMessage());
+    }
+
+    @ExceptionHandler(ApplicationExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleApplicationExpired(ApplicationExpiredException ex) {
+        return response(HttpStatus.UNPROCESSABLE_ENTITY, "APPLICATION_EXPIRED", ex.getMessage());
+    }
+
+    @ExceptionHandler(PricingOfferNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePricingOfferNotFound(PricingOfferNotFoundException ex) {
+        return response(HttpStatus.NOT_FOUND, "PRICING_OFFER_NOT_FOUND", ex.getMessage());
+    }
+
+    @ExceptionHandler(PricingOfferExpiredException.class)
+    public ResponseEntity<ErrorResponse> handlePricingOfferExpired(PricingOfferExpiredException ex) {
+        return response(HttpStatus.UNPROCESSABLE_ENTITY, "PRICING_OFFER_EXPIRED", ex.getMessage());
+    }
 
     @ExceptionHandler(InvitationNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleInvitationNotFound(InvitationNotFoundException ex) {

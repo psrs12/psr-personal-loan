@@ -84,14 +84,25 @@ public class ApplicationJpaAdapter implements ApplicationRepository, ApplicantRe
         e.setApplicationStatus(app.getApplicationStatus().name());
         e.setCreatedTimestamp(app.getCreatedTimestamp());
         e.setUpdatedTimestamp(app.getUpdatedTimestamp());
+        e.setSoftPullCreditReportReferenceId(app.getSoftPullCreditReportReferenceId());
+        e.setHardPullCreditReportReferenceId(app.getHardPullCreditReportReferenceId());
+        e.setCampaignOfferId(app.getCampaignOfferId());
+        e.setCampaignOfferTerms(app.getCampaignOfferTerms());
+        e.setApplicationExpiryDate(app.getApplicationExpiryDate());
         return e;
     }
 
     private Application toDomain(ApplicationJpaEntity e) {
-        return Application.reconstitute(e.getApplicationId(), e.getIntakeId(),
+        return Application.reconstitute(
+                e.getApplicationId(), e.getIntakeId(),
                 ApplicationSource.valueOf(e.getApplicationSource()),
                 ApplicationStatus.valueOf(e.getApplicationStatus()),
-                e.getCreatedTimestamp(), e.getUpdatedTimestamp());
+                e.getCreatedTimestamp(), e.getUpdatedTimestamp(),
+                e.getSoftPullCreditReportReferenceId(),
+                e.getHardPullCreditReportReferenceId(),
+                e.getCampaignOfferId(),
+                e.getCampaignOfferTerms(),
+                e.getApplicationExpiryDate());
     }
 
     private ApplicantJpaEntity toEntity(Applicant a) {
