@@ -1,0 +1,27 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+session:
+  expiration-minutes: 30
+
+kafka:
+  topics:
+    application-events: application-events
+
+integration:
+  offer-management:
+    base-url: http://localhost:9999
+    timeout-seconds: 2
+  customer-profile:
+    base-url: http://localhost:9998
+    timeout-seconds: 2
+  ssn-verification:
+    base-url: http://localhost:9997
+    timeout-seconds: 2

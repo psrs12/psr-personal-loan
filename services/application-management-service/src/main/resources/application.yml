@@ -1,0 +1,93 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1/application-management
+
+spring:
+  application:
+    name: application-management-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/applicationmanagement}
+    username: ${DB_USERNAME:appmanagement}
+    password: ${DB_PASSWORD:appmanagement}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+integration:
+  bolt:
+    base-url: ${BOLT_URL:http://localhost:8084}
+    api-key: ${BOLT_API_KEY}
+    timeout-seconds: 2
+  offer-management:
+    base-url: ${OFFER_MANAGEMENT_URL:http://localhost:8081}
+    timeout-seconds: 2
+  customer-profile:
+    base-url: ${CUSTOMER_PROFILE_URL:http://localhost:8082}
+    timeout-seconds: 2
+  ssn-verification:
+    base-url: ${SSN_VERIFICATION_URL:http://localhost:8083}
+    timeout-seconds: 2
+
+kafka:
+  topics:
+    application-events: application-events
+
+session:
+  expiration-minutes: 30
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      offerManagement:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      customerProfile:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      ssnVerification:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+      bolt:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      offerManagement:
+        max-attempts: 3
+        wait-duration: 500ms
+      customerProfile:
+        max-attempts: 2
+        wait-duration: 500ms
+      bolt:
+        max-attempts: 2
+        wait-duration: 300ms
+
+logging:
+  level:
+    com.personalloan: INFO
+    org.springframework.web: WARN

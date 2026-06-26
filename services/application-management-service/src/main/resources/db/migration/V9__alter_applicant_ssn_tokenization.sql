@@ -1,0 +1,3 @@
+ALTER TABLE applicant DROP COLUMN ssn_encrypted;
+ALTER TABLE applicant ADD COLUMN ssn_token VARCHAR(255) NOT NULL DEFAULT '';
+ALTER TABLE applicant ALTER COLUMN ssn_token DROP DEFAULT;
