@@ -89,14 +89,14 @@ CREATE TABLE application_intake_context
 
 ## Table: application
 
-Core application record. Created after the prospect completes the
-application form. Linked to intake context.
+Core application record. Created after SSN verification passes.
+intake_id is nullable — present for INVITATION source, null for DIRECT.
 
 ```sql
 CREATE TABLE application
 (
  application_id     UUID          PRIMARY KEY,
- intake_id          UUID          NOT NULL,
+ intake_id          UUID          NULL,
  application_source VARCHAR(50)   NOT NULL,
  application_status VARCHAR(50)   NOT NULL,
  created_timestamp  TIMESTAMP     NOT NULL,
@@ -111,7 +111,8 @@ CREATE TABLE application
 
 ## Table: applicant
 
-Applicant personal and contact information associated with an application.
+Applicant personal and contact information as entered by the prospect.
+SSN is encrypted at rest. SSN is never logged or returned in plaintext.
 
 ```sql
 CREATE TABLE applicant
@@ -121,13 +122,16 @@ CREATE TABLE applicant
  first_name          VARCHAR(100)  NOT NULL,
  last_name           VARCHAR(100)  NOT NULL,
  date_of_birth       DATE          NOT NULL,
- email               VARCHAR(200),
- phone               VARCHAR(20),
- street              VARCHAR(200),
- city                VARCHAR(100),
- state               VARCHAR(2),
- zip                 VARCHAR(10),
+ citizenship         VARCHAR(50)   NOT NULL,
+ ssn_encrypted       BYTEA         NOT NULL,
+ email               VARCHAR(200)  NOT NULL,
+ phone               VARCHAR(20)   NOT NULL,
+ street              VARCHAR(200)  NOT NULL,
+ city                VARCHAR(100)  NOT NULL,
+ state               VARCHAR(2)    NOT NULL,
+ zip                 VARCHAR(10)   NOT NULL,
  employer_name       VARCHAR(200),
+ employment_status   VARCHAR(50),
  annual_income       DECIMAL(12,2),
  created_timestamp   TIMESTAMP     NOT NULL,
  updated_timestamp   TIMESTAMP,

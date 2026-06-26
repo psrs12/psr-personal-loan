@@ -83,7 +83,62 @@ Note: `customer` may be absent or partial when `prefillStatus` is `PARTIAL`.
 
 ---
 
-# 2. Create Application
+# 2. Verify SSN
+
+## POST
+
+```
+/ssn/verify
+```
+
+## Purpose
+
+Verifies the applicant's SSN via an external SSN Verification Service before
+application submission. Called after the prospect completes the form, before
+POST /applications.
+
+SSN is never logged. The verification token returned must be included in
+the subsequent POST /applications request.
+
+---
+
+## Request
+
+```json
+{
+  "ssn": "123-45-6789"
+}
+```
+
+---
+
+## Response
+
+```json
+{
+  "verificationToken": "SSN-VRF-abc123xyz",
+
+  "verified": true
+}
+```
+
+---
+
+## Failure Response
+
+```json
+{
+  "errorCode": "SSN_VERIFICATION_FAILED",
+
+  "message": "SSN could not be verified",
+
+  "correlationId": "abc123"
+}
+```
+
+---
+
+# 3. Create Application
 
 ## POST
 
@@ -93,10 +148,11 @@ Note: `customer` may be absent or partial when `prefillStatus` is `PARTIAL`.
 
 ## Purpose
 
-Creates a personal loan application from a completed intake context.
-Called after the prospect has filled in all required information.
+Creates a personal loan application. Called after the prospect has filled in
+all required information and SSN has been verified.
 
-Applies to both ITA and DIRECT intake paths.
+For ITA path: include intakeId received from POST /invitations/initialize.
+For DIRECT path: omit intakeId — applicationSource defaults to DIRECT.
 
 ---
 
@@ -106,6 +162,8 @@ Applies to both ITA and DIRECT intake paths.
 {
   "intakeId": "INT123",
 
+  "ssnVerificationToken": "SSN-VRF-abc123xyz",
+
   "applicant": {
 
     "firstName": "John",
@@ -113,6 +171,8 @@ Applies to both ITA and DIRECT intake paths.
     "lastName": "Smith",
 
     "dateOfBirth": "1985-06-15",
+
+    "citizenship": "US_CITIZEN",
 
     "address": {
 
@@ -133,6 +193,8 @@ Applies to both ITA and DIRECT intake paths.
 
       "employerName": "Acme Corp",
 
+      "employmentStatus": "EMPLOYED",
+
       "annualIncome": 75000
     }
   },
@@ -147,6 +209,8 @@ Applies to both ITA and DIRECT intake paths.
   }
 }
 ```
+
+Note: `intakeId` is optional. Omit for DIRECT applications.
 
 ---
 
@@ -164,7 +228,7 @@ Applies to both ITA and DIRECT intake paths.
 
 ---
 
-# 3. Retrieve Application
+# 4. Retrieve Application
 
 ## GET
 
@@ -174,7 +238,7 @@ Applies to both ITA and DIRECT intake paths.
 
 ---
 
-# 4. Update Application
+# 5. Update Application
 
 ## PUT
 
@@ -184,7 +248,7 @@ Applies to both ITA and DIRECT intake paths.
 
 ---
 
-# 5. Submit Application
+# 6. Submit Application
 
 ## POST
 
@@ -220,6 +284,8 @@ Applies to both ITA and DIRECT intake paths.
 | DUPLICATE_APPLICATION            | 409  | Active application already exists    |
 | INTAKE_NOT_FOUND                 | 404  | Intake context does not exist        |
 | INTAKE_EXPIRED                   | 409  | Intake context has expired           |
+| SSN_VERIFICATION_FAILED          | 422  | SSN could not be verified            |
+| SSN_VERIFICATION_TOKEN_INVALID   | 400  | SSN verification token missing or expired |
 
 ---
 
