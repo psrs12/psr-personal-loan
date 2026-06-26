@@ -4,7 +4,7 @@
 
 ## Business Capability Model
 
-Version: 2.0
+Version: 3.0
 
 Status: Draft
 
@@ -18,6 +18,12 @@ This document defines the business capabilities owned by the Personal Loan Acqui
 
 The platform provides the end-to-end digital acquisition journey for personal loan applicants and orchestrates enterprise services required to evaluate, approve, and fund a loan application.
 
+The platform supports multiple application entry channels including:
+
+* Invitation To Apply (ITA)
+* Direct Application
+* Future acquisition channels
+
 The platform does not own enterprise capabilities such as Offer Management, Identity Verification, Fraud Management, Credit Management, Decisioning, Notification Delivery, or Funding Execution.
 
 ---
@@ -29,11 +35,13 @@ The platform shall:
 * Provide a seamless digital loan application experience.
 * Support invitation-based acquisition journeys.
 * Support direct application journeys.
+* Reuse available customer information when available.
+* Reduce applicant data entry.
 * Coordinate enterprise verification and decision services.
 * Reduce application abandonment.
 * Support straight-through processing.
 * Support manual underwriting when required.
-* Support loan funding initiation.
+* Initiate loan funding requests.
 * Maintain complete acquisition auditability.
 
 ---
@@ -42,9 +50,11 @@ The platform shall:
 
 ## In Scope
 
-Invitation To Apply
-
 Application Management
+
+Application Intake
+
+Application Creation
 
 Customer Information Collection
 
@@ -158,17 +168,29 @@ Core Loan Platform
 
 Authentication Platform
 
+Customer Profile Platform
+
 ---
 
 # 5. Acquisition Journey
 
-The acquisition journey consists of the following stages.
+The acquisition journey supports multiple entry points.
 
-Invitation To Apply
+## Invitation Based Journey
+
+Invitation Intake
 
 ↓
 
-Application Initiation
+Offer Retrieval
+
+↓
+
+Customer Information Retrieval
+
+↓
+
+Application Creation
 
 ↓
 
@@ -214,45 +236,79 @@ Funding Request
 
 Loan Booking
 
+---
+
+## Direct Application Journey
+
+Direct Intake
+
 ↓
 
-Application Completed
+Application Creation
+
+↓
+
+Customer Information Collection
+
+↓
+
+Application Completion
+
+↓
+
+Identity Verification
+
+↓
+
+Fraud Verification
+
+↓
+
+Credit Evaluation
+
+↓
+
+Decision Evaluation
+
+↓
+
+Offer Acceptance
+
+↓
+
+Document Collection
+
+↓
+
+Underwriting
+
+↓
+
+Bank Verification
+
+↓
+
+Funding Request
+
+↓
+
+Loan Booking
 
 ---
 
 # 6. Business Capabilities
 
-## Capability 1 – Invitation To Apply
+# Capability 1 – Application Management
 
-Purpose
+## Purpose
 
-Allow applicants to initiate applications using an Invitation ID.
+Manage the complete personal loan application lifecycle from application initiation through submission.
 
-Functions
-
-Validate Invitation
-
-Retrieve Offer Information
-
-Retrieve Prospect Information
-
-Prefill Application
-
-Initialize Application
-
-Specification
-
-002-invitation-to-apply-spec.md
+Application Management provides a unified application journey regardless of acquisition channel.
 
 ---
 
-## Capability 2 – Application Management
-
-Purpose
-
-Manage application lifecycle.
-
-Functions
+## Functions
 
 Create Application
 
@@ -266,19 +322,125 @@ Track Application Status
 
 Manage Applicant Information
 
-Specification
+Maintain Application State
+
+Capture Application Events
+
+---
+
+## Specification
 
 003-application-spec.md
 
 ---
 
-## Capability 3 – Identity Verification Orchestration
+# Sub Capability – Application Intake
 
-Purpose
+## Purpose
+
+Initialize the application journey based on how the prospect enters the platform.
+
+Application Intake determines available information and creates the initial application context.
+
+---
+
+## Intake Channel 1 – Invitation Intake
+
+### Purpose
+
+Support prospects who received a marketing invitation.
+
+---
+
+## Functions
+
+Validate Invitation Identifier
+
+Retrieve Offer Information
+
+Retrieve Customer Reference Identifier
+
+Retrieve Customer Profile Information
+
+Create Application Intake Context
+
+Prefill Available Application Information
+
+Initialize Application Creation
+
+---
+
+## External Dependencies
+
+Offer Management Platform
+
+Customer Profile Platform
+
+---
+
+## Intake Channel 2 – Direct Intake
+
+### Purpose
+
+Support prospects who start a personal loan application without an invitation.
+
+---
+
+## Functions
+
+Create Empty Application Context
+
+Collect Applicant Information
+
+Initialize Application Creation
+
+Continue Application Journey
+
+---
+
+## Application Intake Context
+
+Attributes:
+
+intakeId
+
+applicationSource
+
+invitationId
+
+offerId
+
+customerReferenceId
+
+prefillStatus
+
+createdTimestamp
+
+Application Source:
+
+INVITATION
+
+DIRECT
+
+PARTNER
+
+---
+
+## Specification
+
+002-invitation-to-apply-spec.md
+
+---
+
+# Capability 2 – Identity Verification Orchestration
+
+## Purpose
 
 Coordinate identity verification activities.
 
-Functions
+---
+
+## Functions
 
 Initiate Verification
 
@@ -288,19 +450,23 @@ Process Verification Results
 
 Apply Product-Specific Verification Rules
 
-Specification
+---
+
+## Specification
 
 004-identity-verification-orchestration-spec.md
 
 ---
 
-## Capability 4 – Fraud Verification Orchestration
+# Capability 3 – Fraud Verification Orchestration
 
-Purpose
+## Purpose
 
 Coordinate fraud evaluation activities.
 
-Functions
+---
+
+## Functions
 
 Initiate Fraud Evaluation
 
@@ -308,23 +474,25 @@ Track Fraud Status
 
 Process Fraud Results
 
-Apply Personal Loan Fraud Policies
-
 Route Fraud Exceptions
 
-Specification
+---
+
+## Specification
 
 005-fraud-verification-orchestration-spec.md
 
 ---
 
-## Capability 5 – Credit Evaluation Orchestration
+# Capability 4 – Credit Evaluation Orchestration
 
-Purpose
+## Purpose
 
 Coordinate credit evaluation activities.
 
-Functions
+---
+
+## Functions
 
 Initiate Credit Evaluation
 
@@ -332,23 +500,25 @@ Track Credit Status
 
 Process Credit Results
 
-Apply Personal Loan Credit Policies
-
 Route Credit Exceptions
 
-Specification
+---
+
+## Specification
 
 006-credit-evaluation-orchestration-spec.md
 
 ---
 
-## Capability 6 – Decision Orchestration
+# Capability 5 – Decision Orchestration
 
-Purpose
+## Purpose
 
 Coordinate decision processing.
 
-Functions
+---
+
+## Functions
 
 Submit Decision Requests
 
@@ -360,19 +530,23 @@ Route Referred Applications
 
 Manage Decision Exceptions
 
-Specification
+---
+
+## Specification
 
 007-decision-orchestration-spec.md
 
 ---
 
-## Capability 7 – Offer Acceptance
+# Capability 6 – Offer Acceptance
 
-Purpose
+## Purpose
 
-Present offers and capture acceptance.
+Present approved offers and capture acceptance.
 
-Functions
+---
+
+## Functions
 
 Display Approved Offers
 
@@ -382,19 +556,23 @@ Capture Disclosures
 
 Capture Electronic Consent
 
-Specification
+---
+
+## Specification
 
 008-offer-acceptance-spec.md
 
 ---
 
-## Capability 8 – Document Collection
+# Capability 7 – Document Collection
 
-Purpose
+## Purpose
 
 Collect required applicant documents.
 
-Functions
+---
+
+## Functions
 
 Generate Document Requests
 
@@ -404,19 +582,23 @@ Track Document Status
 
 Manage Outstanding Requirements
 
-Specification
+---
+
+## Specification
 
 009-document-collection-spec.md
 
 ---
 
-## Capability 9 – Underwriting Workflow
+# Capability 8 – Underwriting Workflow
 
-Purpose
+## Purpose
 
 Support manual application review.
 
-Functions
+---
+
+## Functions
 
 Create Work Queues
 
@@ -428,39 +610,47 @@ Capture Review Decisions
 
 Track Underwriting Status
 
-Specification
+---
+
+## Specification
 
 010-underwriting-spec.md
 
 ---
 
-## Capability 10 – Bank Verification
+# Capability 9 – Bank Verification
 
-Purpose
+## Purpose
 
 Verify applicant funding accounts.
 
-Functions
+---
+
+## Functions
 
 Initiate Verification
 
 Track Verification Results
 
-Manage Verification Exceptions
+Manage Exceptions
 
-Specification
+---
+
+## Specification
 
 011-bank-verification-spec.md
 
 ---
 
-## Capability 11 – Funding Request Orchestration
+# Capability 10 – Funding Request Orchestration
 
-Purpose
+## Purpose
 
 Initiate loan funding.
 
-Functions
+---
+
+## Functions
 
 Create Funding Requests
 
@@ -470,41 +660,49 @@ Process Funding Responses
 
 Manage Funding Exceptions
 
-Specification
+---
+
+## Specification
 
 012-funding-request-spec.md
 
 ---
 
-## Capability 12 – Notification Orchestration
+# Capability 11 – Notification Orchestration
 
-Purpose
+## Purpose
 
-Initiate applicant communications.
+Coordinate applicant communications.
 
-Functions
+---
 
-Generate Notification Requests
+## Functions
+
+Generate Notifications
 
 Track Notification Status
 
-Manage Communication History
+Maintain Communication History
 
-Specification
+---
+
+## Specification
 
 013-notification-orchestration-spec.md
 
 ---
 
-## Capability 13 – Application Tracking
+# Capability 12 – Application Tracking
 
-Purpose
+## Purpose
 
 Provide visibility into application progress.
 
-Functions
+---
 
-Status Inquiry
+## Functions
+
+Application Status Inquiry
 
 Milestone Tracking
 
@@ -514,19 +712,23 @@ Customer Status View
 
 Operational Tracking
 
-Specification
+---
+
+## Specification
 
 014-application-tracking-spec.md
 
 ---
 
-## Capability 14 – Acquisition Audit Trail
+# Capability 13 – Acquisition Audit Trail
 
-Purpose
+## Purpose
 
-Provide end-to-end auditability.
+Provide end-to-end acquisition auditability.
 
-Functions
+---
+
+## Functions
 
 Capture Business Events
 
@@ -536,7 +738,9 @@ Capture System Activities
 
 Support Compliance Reporting
 
-Specification
+---
+
+## Specification
 
 015-acquisition-audit-spec.md
 
@@ -544,39 +748,22 @@ Specification
 
 # 7. Capability Ownership Matrix
 
-Capability                                 Owner
-
-Invitation Management                      Offer Management Platform
-
-Offer Management                           Offer Management Platform
-
-Identity Verification                      Identity Verification Platform
-
-Fraud Assessment                           Fraud Platform
-
-Credit Evaluation                          Credit Management Platform
-
-Decision Execution                         Decision Platform
-
-Funding Execution                          Funding Platform
-
-Loan Booking                               Core Loan Platform
-
----
-
-Application Management                     Acquisition Platform
-
-Offer Acceptance                           Acquisition Platform
-
-Document Collection                        Acquisition Platform
-
-Underwriting Workflow                      Acquisition Platform
-
-Funding Request Orchestration              Acquisition Platform
-
-Application Tracking                       Acquisition Platform
-
-Acquisition Audit Trail                    Acquisition Platform
+| Capability              | Owner                          |
+| ----------------------- | ------------------------------ |
+| Application Management  | Acquisition Platform           |
+| Application Intake      | Acquisition Platform           |
+| Identity Verification   | Identity Verification Platform |
+| Fraud Assessment        | Fraud Platform                 |
+| Credit Evaluation       | Credit Management Platform     |
+| Decision Execution      | Decision Platform              |
+| Funding Execution       | Funding Platform               |
+| Loan Booking            | Core Loan Platform             |
+| Offer Management        | Offer Management Platform      |
+| Customer Profile        | Customer Platform              |
+| Document Collection     | Acquisition Platform           |
+| Underwriting Workflow   | Acquisition Platform           |
+| Application Tracking    | Acquisition Platform           |
+| Acquisition Audit Trail | Acquisition Platform           |
 
 ---
 
@@ -650,7 +837,7 @@ Data Retention
 
 000-domain-boundaries-and-context-map.md
 
-002-invitation-to-apply-spec.md
+002-application-intake-spec.md
 
 003-application-spec.md
 
