@@ -241,10 +241,10 @@ After the decision phase, applicants access their application via the self-servi
 
 | Application Status | Micro-Frontend Shown |
 |-------------------|-----------------------|
-| APPROVED | OfferAcceptanceMfe (declarations + e-sign) |
-| DECLINED | DenialMfe (adverse action information) |
-| DOCUMENTS_REQUIRED | DocumentUploadMfe (dynamic upload slots per requirement) |
-| OFFER_ACCEPTED / FUNDING_PENDING / FUNDED / COMPLETED | ConfirmationMfe |
+| APPROVED | `OfferAcceptanceMfe` — declarations + e-sign (application-management-ui) |
+| DECLINED | `DenialMfe` — adverse action information (application-management-ui) |
+| DOCUMENTS_REQUIRED | `<document-upload-manager>` — per-requirement upload slots, progress bar (document-management-ui web component) |
+| OFFER_ACCEPTED / FUNDING_PENDING / FUNDED / COMPLETED | `ConfirmationMfe` — post-sign confirmation (application-management-ui) |
 
 ---
 

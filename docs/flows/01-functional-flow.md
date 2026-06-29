@@ -121,12 +121,14 @@ Retrieve personalised loan offers based on the evaluated applicant profile and p
 
 1. The `pricing-orchestration-service` requests offers from the **Offer Management Platform**, supplying the evaluated applicant profile.
 2. Eligible offers are returned (amount, term, APR, monthly payment).
-3. Offers are presented to the applicant in the `application-management-ui`.
-4. The applicant selects their preferred offer.
+3. Offers are rendered by the **`<pricing-offer-selector>`** web component (`pricing-offers-ui`). The host page embeds this component with the `application-id` and `api-base-url` attributes.
+4. The component fetches and displays available offers via `usePricingOffers`, rendering each as an `OfferRow` within the `OfferList`.
+5. The applicant reviews all offers and selects their preferred one.
 
 ## Key Rules
 - All available offers are shown; the applicant chooses one.
 - No credit impact has occurred at this stage (soft pull only).
+- The `<pricing-offer-selector>` is a standalone web component — it can be embedded in any host page without coupling to the shell framework.
 
 ---
 
@@ -137,13 +139,16 @@ Confirm the applicant's chosen offer and obtain consent for a hard credit pull, 
 
 ## Flow
 
-1. The applicant selects an offer and is presented with a **hard pull consent** disclosure.
-2. On confirmation, the `pricing-orchestration-service` submits the selected offer to the **Decision Engine** along with the hard pull request.
-3. The Decision Engine executes a hard credit enquiry (this is recorded on the applicant's credit file).
+1. After offer selection, the `<pricing-offer-selector>` component transitions to the **`ConsentStep`**, presenting the hard pull disclosure to the applicant.
+2. The applicant reads the disclosure and confirms consent.
+3. The component fires an `offer-confirmed` custom DOM event carrying `{ offerId }`, which the host page handles to proceed.
+4. The `pricing-orchestration-service` submits the selected offer to the **Decision Engine** along with the hard pull request.
+5. The Decision Engine executes a hard credit enquiry (this is recorded on the applicant's credit file).
 
 ## Key Rules
-- The applicant must explicitly consent to the hard pull.
-- Withdrawal before consent means no hard pull occurs and no credit file impact.
+- The applicant must explicitly confirm on the ConsentStep before any hard pull is triggered.
+- Withdrawal before confirmation means no hard pull occurs and no credit file impact.
+- The `offer-confirmed` event is the integration point between the `pricing-offers-ui` web component and the host application.
 
 ---
 
@@ -201,8 +206,8 @@ Collect supporting documents as required by the Decision Engine before a final c
 2. The `document-service` consumes the event, applies the **Anti-Corruption Layer** mapping, and creates `DocumentRequirement` records.
 3. The `document-service` calls `application-management-service` to confirm the status as `DOCUMENTS_REQUIRED`.
 4. The applicant logs in to the self-service portal.
-5. The portal shell detects status `DOCUMENTS_REQUIRED` and loads the **DocumentUploadMfe**.
-6. The MFE fetches the document requirements and renders one upload slot per required document type.
+5. The portal shell detects status `DOCUMENTS_REQUIRED` and embeds the **`<document-upload-manager>`** web component (`document-management-ui`), passing the `api-base-url`, `application-id`, and `session-token` attributes.
+6. The component fetches document requirements and renders one `RequirementCard` per required document type, with a progress bar showing overall completion.
 7. For each document, the applicant uploads a file (PDF, JPEG, PNG).
 8. Each upload is stored (S3), a `DocumentRecord` is created, and a virus scan is queued.
 9. On a clean virus scan result, the `DocumentRecord` is marked `VERIFIED`. When the count for a requirement is met, the `DocumentRequirement` is marked `COMPLETED`.
@@ -255,17 +260,18 @@ Enable call centre agents to view the complete application history to resolve cu
 
 # 13. Summary of Service Responsibilities
 
-| Business Phase | Primary Service | Supporting Services |
-|---------------|-----------------|---------------------|
-| Invitation | invitation-service | — |
-| Application | application-management-service | application-management-ui |
-| Evaluation | pricing-orchestration-service | Identity, Fraud, Credit platforms |
-| Pricing | pricing-orchestration-service | Offer Management platform |
-| Decision | pricing-orchestration-service | Decision Engine platform |
-| Offer Acceptance | offer-acceptance-service | application-management-service |
-| Document Collection | document-service | application-management-service |
-| Funding | funding-request-service (planned) | Funding platform |
-| Agent Support | application-management-service | — |
+| Business Phase | Primary Service | Supporting UI | Supporting Services |
+|---------------|-----------------|---------------|---------------------|
+| Invitation | invitation-service | application-management-ui (ITA form) | — |
+| Application | application-management-service | application-management-ui (ITA form) | — |
+| Evaluation | pricing-orchestration-service | — | Identity, Fraud, Credit platforms |
+| Pricing & Offer Display | pricing-orchestration-service | pricing-offers-ui (`<pricing-offer-selector>`) | Offer Management platform |
+| Offer Selection & Hard Pull Consent | pricing-orchestration-service | pricing-offers-ui (`ConsentStep`) | Decision Engine platform |
+| Final Decision | pricing-orchestration-service | — | Decision Engine platform |
+| Offer Acceptance | offer-acceptance-service | application-management-ui (`OfferAcceptanceMfe`) | application-management-service |
+| Document Collection | document-service | document-management-ui (`<document-upload-manager>`) | application-management-service |
+| Funding | funding-request-service (planned) | application-management-ui (`ConfirmationMfe`) | Funding platform |
+| Agent Support | application-management-service | — | — |
 
 ---
 

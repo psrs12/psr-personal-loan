@@ -46,7 +46,10 @@ Step  Actor                  Action / Event                           App Status
  9    application-mgmt-svc   Receive submission                       SUBMITTED
 10    pricing-orch-svc       Run identity, fraud, soft pull           PROCESSING
 11    pricing-orch-svc       Retrieve offers from Offer Platform       PROCESSING
-12    Customer               Select offer; consent to hard pull        PROCESSING
+12    Customer               View offers in <pricing-offer-selector>   PROCESSING
+      pricing-offers-ui      OfferList rendered; customer selects      PROCESSING
+      pricing-offers-ui      ConsentStep rendered; customer confirms   PROCESSING
+      pricing-offers-ui      Fires offer-confirmed custom event        PROCESSING
 13    Decision Engine        Execute hard pull; return APPROVED        —
 14    pricing-orch-svc       PATCH /status → APPROVED                 APPROVED
 15    pricing-orch-svc       Publish FinalDecisionApproved (Kafka)    APPROVED
@@ -88,8 +91,8 @@ Step  Actor                  Action / Event                           App Status
 18    document-service       Persist requirements                          APPROVED
 19    document-service       PATCH /status → DOCUMENTS_REQUIRED            DOCUMENTS_REQUIRED
 20    Customer               Log in to portal                              DOCUMENTS_REQUIRED
-21    UI Shell               Poll status; route to DocumentUploadMfe        DOCUMENTS_REQUIRED
-22    Customer               GET /requirements → see 3 requirement slots   DOCUMENTS_REQUIRED
+21    UI Shell               Poll status; embed <document-upload-manager>  DOCUMENTS_REQUIRED
+22    document-management-ui GET /requirements → render 3 RequirementCards DOCUMENTS_REQUIRED
 23    Customer               Upload bank statement (file 1 of 3)           DOCUMENTS_REQUIRED
 24    document-service       Store to S3; create DocumentRecord (UPLOADED) DOCUMENTS_REQUIRED
 25    Virus Scanner          Scan complete; result: CLEAN                  DOCUMENTS_REQUIRED

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import OfferAcceptanceMfe from '../mfe/OfferAcceptanceMfe'
 import DenialMfe from '../mfe/DenialMfe'
-import DocumentUploadMfe from '../mfe/DocumentUploadMfe'
 import ConfirmationMfe from '../mfe/ConfirmationMfe'
 
 type ApplicationStatus =
@@ -19,6 +18,18 @@ interface SessionContext {
   sessionToken: string
   applicationId: string
   applicationStatus: ApplicationStatus
+}
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'document-upload-manager': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        'api-base-url'?: string
+        'application-id'?: string
+        'session-token'?: string
+      }
+    }
+  }
 }
 
 interface Props {
@@ -109,10 +120,10 @@ function MfeRouter({
 
     case 'DOCUMENTS_REQUIRED':
       return (
-        <DocumentUploadMfe
-          applicationId={applicationId}
-          sessionToken={sessionToken}
-          documentApiBaseUrl={documentApiBaseUrl}
+        <document-upload-manager
+          api-base-url={documentApiBaseUrl}
+          application-id={applicationId}
+          session-token={sessionToken}
         />
       )
     case 'OFFER_ACCEPTED':

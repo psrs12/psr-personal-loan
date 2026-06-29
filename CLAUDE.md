@@ -18,6 +18,8 @@ The platform supports the full Personal Loan application lifecycle using:
 
 # Services
 
+**Backend**
+
 | Service | Port | Responsibility |
 |---------|------|----------------|
 | `invitation-service` | 8080 | Invitation token generation and validation |
@@ -25,7 +27,14 @@ The platform supports the full Personal Loan application lifecycle using:
 | `pricing-orchestration-service` | 8082 | Soft pull, offer pricing, hard pull, final decision routing |
 | `offer-acceptance-service` | 8085 | Declarations, e-signature, ESignCompleted event |
 | `document-service` | 8084 | Document requirements, upload, virus scan lifecycle, completion detection |
-| `application-management-ui` | — | Micro-frontend shell — ITA flow + applicant self-service portal |
+
+**Frontend**
+
+| UI | Responsibility |
+|----|----------------|
+| `application-management-ui` | Micro-frontend shell — ITA flow web components + applicant self-service portal (login, state routing, embeds post-decision web components) |
+| `pricing-offers-ui` | Standalone `<pricing-offer-selector>` web component — offer list, offer selection, hard pull consent, fires `offer-confirmed` custom event |
+| `document-management-ui` | Standalone `<document-upload-manager>` web component — document requirements list, per-requirement file upload, progress bar, status tracking |
 
 ---
 

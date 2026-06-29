@@ -69,9 +69,16 @@ The Personal Loan Acquisition Platform follows a domain-driven, cloud-native mic
 ┌─────────────────────────────────────────────────────────────────┐
 │               Personal Loan Acquisition Platform                │
 │                                                                 │
-│  application-management-ui (Micro-Frontend Shell)               │
-│  ├── Applicant Portal (Login, Status, Post-Decision MFEs)       │
-│  └── ITA Flow (Invitation-to-Apply, Application Form)           │
+│  Frontend                                                       │
+│  ├── application-management-ui (Micro-Frontend Shell)           │
+│  │   ├── Applicant Portal (Login, Status, Post-Decision MFEs)   │
+│  │   └── ITA Flow (Invitation-to-Apply, Application Form)       │
+│  ├── pricing-offers-ui                                          │
+│  │   └── <pricing-offer-selector> web component                 │
+│  │       (offer list, offer selection, hard pull consent)        │
+│  └── document-management-ui                                     │
+│      └── <document-upload-manager> web component                │
+│          (requirements display, file upload, status tracking)    │
 │                                                                 │
 │  Backend Services                                               │
 │  ├── invitation-service                                         │
@@ -111,9 +118,11 @@ The Personal Loan Acquisition Platform follows a domain-driven, cloud-native mic
 
 ## 5.2 UI Layer
 
-| Component | Responsibility |
-|-----------|----------------|
-| `application-management-ui` | Micro-frontend shell. Owns ITA flow web components and the applicant self-service portal (login → state routing → post-decision MFEs) |
+| Component | Type | Responsibility |
+|-----------|------|----------------|
+| `application-management-ui` | Micro-frontend shell | Owns ITA flow web components and the applicant self-service portal (login → state routing → embeds post-decision web components) |
+| `pricing-offers-ui` | Standalone web component | Publishes `<pricing-offer-selector>` — renders available offers, captures offer selection, presents hard pull consent, fires `offer-confirmed` custom event |
+| `document-management-ui` | Standalone web component | Publishes `<document-upload-manager>` — renders document requirements, handles file upload per requirement, tracks upload and virus scan status, shows progress |
 
 ## 5.3 Enterprise Platform Dependencies
 
@@ -209,7 +218,11 @@ Example: `DecisionEngineDocumentCodeMapper` in document-service translates Decis
 
 # 9. UI Architecture
 
-The `application-management-ui` is a Vite/React application that serves as a micro-frontend shell.
+The platform has two independently deployable frontend units.
+
+## application-management-ui
+
+Vite/React micro-frontend shell. Owns the ITA application flow and the post-decision applicant portal.
 
 ```
 application-management-ui
@@ -218,15 +231,60 @@ application-management-ui
 │   └── ita-progressive-form    (standalone web component)
 │
 └── Applicant Self-Service Portal
-    ├── ApplicantLoginPage       (applicationId + last4SSN + DOB)
-    ├── ApplicantShell           (3-second status poll → MFE router)
-    ├── OfferAcceptanceMfe       (declarations + e-sign)
-    ├── DocumentUploadMfe        (dynamic requirement slots + file upload)
-    ├── DenialMfe                (adverse action information)
-    └── ConfirmationMfe          (post-sign / funded confirmation)
+    ├── ApplicantLoginPage           (applicationId + last4SSN + DOB)
+    ├── ApplicantShell               (3-second status poll → MFE router)
+    ├── OfferAcceptanceMfe           (declarations + e-sign)
+    ├── <document-upload-manager>    (embedded web component from document-management-ui)
+    ├── DenialMfe                    (adverse action information)
+    └── ConfirmationMfe              (post-sign / funded confirmation)
 ```
 
-The shell polls `GET /applications/{id}` every 3 seconds and routes to the appropriate MFE based on `applicationStatus`. Session token from login is forwarded as `Authorization: Bearer <token>` on all authenticated calls.
+The shell polls `GET /applications/{id}` every 3 seconds and routes to the appropriate MFE based on `applicationStatus`. Session token from login is forwarded as `Authorization: Bearer <token>` on all authenticated calls. The `<document-upload-manager>` web component is embedded directly — it is owned and deployed by `document-management-ui`, not the shell.
+
+## pricing-offers-ui
+
+Vite/React application that builds and exports the custom element `<pricing-offer-selector>`.
+
+```
+pricing-offers-ui
+└── <pricing-offer-selector> (custom element / web component)
+    ├── OfferFlow               (top-level state machine: loading → offer-list → consent → submitted)
+    ├── OfferList               (renders available pricing offers)
+    ├── OfferRow                (individual offer card with selection)
+    └── ConsentStep             (hard pull disclosure + confirmation)
+```
+
+**Attributes:** `api-base-url`, `application-id`, `applicant-reference`
+
+**Events emitted:**
+- `offer-confirmed` — fired when the applicant confirms offer selection and hard pull consent; carries `{ offerId }` in `event.detail`
+- `offer-error` — fired on unrecoverable errors; carries `{ error }` in `event.detail`
+
+The host page listens for `offer-confirmed` to proceed to the decision phase.
+
+## document-management-ui
+
+Vite/React application that builds and exports the custom element `<document-upload-manager>`.
+
+```
+document-management-ui
+└── <document-upload-manager> (custom element / web component)
+    ├── DocumentManager         (top-level — fetches requirements, renders list with progress bar)
+    ├── RequirementCard         (per-requirement card — file input, upload button, status badge)
+    └── StatusBadge             (PENDING / UPLOADED / SCANNING / VERIFIED / REJECTED / COMPLETED)
+```
+
+**Attributes:** `api-base-url`, `application-id`, `session-token`
+
+**Behaviour:**
+- Fetches `GET /applications/{id}/documents/requirements` on mount
+- Renders one `RequirementCard` per `DocumentRequirement`
+- Each card handles its own upload via `POST /applications/{id}/documents/upload`
+- Reloads requirements after each successful upload to reflect updated status
+- Displays a progress bar (`N of M complete`) and a completion banner when all requirements are `COMPLETED`
+- Rejected documents (virus scan failure) display an inline prompt to re-upload
+
+The shell embeds `<document-upload-manager>` when `applicationStatus = DOCUMENTS_REQUIRED`, passing the applicant's session token as the `session-token` attribute.
 
 ---
 

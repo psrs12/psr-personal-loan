@@ -69,25 +69,40 @@ app-management-service     pricing-orchestration-service    Identity Platform   
 
 ---
 
-# 4. Offer Selection and Hard Pull Flow
+# 4. Offer Display, Selection, and Hard Pull Consent Flow
 
 ```
-Applicant      UI Shell      pricing-orchestration-service    Decision Engine
-    │               │                   │                          │
-    │  Select offer │                   │                          │
-    │──────────────►│                   │                          │
-    │  Consent hard │                   │                          │
-    │  pull         │  POST /hard-pull/submit                      │
-    │──────────────►│──────────────────►│                          │
-    │               │                   │  POST /decisions         │
-    │               │                   │ (hard pull request +     │
-    │               │                   │  offer details)          │
-    │               │                   │─────────────────────────►│
-    │               │                   │                          │ [executes hard
-    │               │                   │                          │  credit enquiry]
-    │               │                   │◄─────────────────────────│ final decision
-    │               │                   │                          │
-    │               │                   │  [route by outcome]      │
+Applicant   <pricing-offer-selector>   pricing-orchestration-service    Decision Engine
+    │               │                           │                            │
+    │  (component   │                           │                            │
+    │  embedded in  │  GET /applications/{id}/offers                         │
+    │  host page)   │──────────────────────────►│                            │
+    │               │                           │──► Offer Management        │
+    │               │                           │◄── eligible offers         │
+    │               │  200 offers[]             │                            │
+    │               │◄──────────────────────────│                            │
+    │               │                           │                            │
+    │  View offers  │                           │                            │
+    │◄──────────────│ (OfferList rendered)       │                            │
+    │  Select offer │                           │                            │
+    │──────────────►│ (transitions to           │                            │
+    │               │  ConsentStep)             │                            │
+    │               │                           │                            │
+    │  Read consent │                           │                            │
+    │  disclosure   │                           │                            │
+    │  Confirm      │                           │                            │
+    │──────────────►│                           │                            │
+    │               │ fires offer-confirmed     │                            │
+    │               │ custom event {offerId}    │                            │
+    │               │──────────────────────────►│                            │
+    │               │                           │  POST /decisions           │
+    │               │                           │  (hard pull + offerId)     │
+    │               │                           │───────────────────────────►│
+    │               │                           │                            │ [hard credit
+    │               │                           │                            │  enquiry]
+    │               │                           │◄───────────────────────────│ final decision
+    │               │                           │                            │
+    │               │                           │  [route by outcome]        │
 ```
 
 ---
@@ -186,31 +201,39 @@ Applicant     UI Shell (OfferAcceptanceMfe)    offer-acceptance-service    appli
 # 8. Document Collection Flow
 
 ```
-Applicant   UI Shell (DocumentUploadMfe)  document-service    Virus Scanner    app-management-service
-    │                   │                       │                   │                   │
-    │                   │  GET /requirements    │                   │                   │
-    │                   │──────────────────────►│                   │                   │
-    │                   │  200 requirements     │                   │                   │
-    │                   │◄──────────────────────│                   │                   │
-    │  Upload file for  │                       │                   │                   │
-    │  requirement      │                       │                   │                   │
-    │──────────────────►│  POST /upload         │                   │                   │
-    │                   │──────────────────────►│                   │                   │
-    │                   │                       │ [store to S3]     │                   │
-    │                   │                       │ [create record]   │                   │
-    │                   │                       │ [queue scan]      │                   │
-    │                   │  201 {documentId}     │──────────────────►│                   │
-    │                   │◄──────────────────────│                   │                   │
-    │                   │                       │                   │  [scan complete]  │
-    │                   │                       │  POST /internal/virus-scan/result     │
-    │                   │                       │◄──────────────────│                   │
-    │                   │                       │ [mark VERIFIED]   │                   │
-    │                   │                       │ [check all done?] │                   │
-    │                   │                       │                   │                   │
-    │                   │                       │  publish DocumentsCompleted           │
-    │                   │                       │- - - - - - - - - - - - - - - - - - - ►│
-    │                   │                       │                   │  [transition to   │
-    │                   │                       │                   │   UNDERWRITING]   │
+Applicant  <document-upload-manager>   document-service    Virus Scanner    app-management-service
+    │       (document-management-ui)        │                   │                   │
+    │               │                       │                   │                   │
+    │  (shell embeds component with         │                   │                   │
+    │   api-base-url, application-id,       │                   │                   │
+    │   session-token attributes)           │                   │                   │
+    │               │  GET /requirements    │                   │                   │
+    │               │──────────────────────►│                   │                   │
+    │               │  200 requirements[]   │                   │                   │
+    │               │◄──────────────────────│                   │                   │
+    │  View slots   │                       │                   │                   │
+    │◄──────────────│ (RequirementCard per  │                   │                   │
+    │               │  requirement +        │                   │                   │
+    │               │  progress bar)        │                   │                   │
+    │  Select file  │                       │                   │                   │
+    │  + Upload     │  POST /upload         │                   │                   │
+    │──────────────►│──────────────────────►│                   │                   │
+    │               │                       │ [store to S3]     │                   │
+    │               │                       │ [create record]   │                   │
+    │               │                       │ [queue scan]      │                   │
+    │               │  201 {documentId}     │──────────────────►│                   │
+    │               │◄──────────────────────│                   │                   │
+    │               │ [reload requirements] │                   │  [scan complete]  │
+    │               │──────────────────────►│                   │                   │
+    │               │                       │  POST /internal/virus-scan/result     │
+    │               │                       │◄──────────────────│                   │
+    │               │                       │ [mark VERIFIED]   │                   │
+    │               │                       │ [check all done?] │                   │
+    │               │                       │                   │                   │
+    │               │                       │  publish DocumentsCompleted           │
+    │               │                       │- - - - - - - - - - - - - - - - - - - ►│
+    │               │                       │                   │  [transition to   │
+    │               │                       │                   │   UNDERWRITING]   │
 ```
 
 ---
