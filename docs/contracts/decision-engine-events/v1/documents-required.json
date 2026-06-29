@@ -1,0 +1,67 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DocumentsRequired",
+  "description": "Published by the Decision Engine when a final decision requires the applicant to submit supporting documents. Version 1.0.",
+  "version": "1.0",
+  "topic": "pricing-events",
+  "eventType": "FinalDecisionDocumentsRequired",
+  "type": "object",
+  "required": ["eventId", "eventType", "eventVersion", "timestamp", "source", "correlationId", "payload"],
+  "properties": {
+    "eventId":      { "type": "string", "format": "uuid" },
+    "eventType":    { "type": "string", "const": "FinalDecisionDocumentsRequired" },
+    "eventVersion": { "type": "string", "const": "1.0" },
+    "timestamp":    { "type": "string", "format": "date-time" },
+    "source":       { "type": "string", "const": "pricing-orchestration-service" },
+    "correlationId":{ "type": "string", "format": "uuid" },
+    "payload": {
+      "type": "object",
+      "required": ["applicationId", "documents"],
+      "properties": {
+        "applicationId": { "type": "string", "format": "uuid" },
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["decisionEngineCode", "count"],
+            "properties": {
+              "decisionEngineCode": {
+                "type": "string",
+                "description": "Code as returned verbatim by the Decision Engine.",
+                "enum": [
+                  "BANK_STMT_3M",
+                  "BANK_STMT_6M",
+                  "PAYSLIP_2",
+                  "PAYSLIP_3",
+                  "TAX_RETURN_1Y",
+                  "TAX_RETURN_2Y",
+                  "GOV_ID",
+                  "PROOF_OF_ADDRESS",
+                  "EMPLOYMENT_LETTER"
+                ]
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Number of documents of this type required."
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "documentTypeMapping": {
+    "description": "Canonical mapping from Decision Engine codes to personal loan platform domain types. Owned by document-service ACL.",
+    "BANK_STMT_3M":        { "domainType": "BANK_STATEMENT",     "count": 3, "description": "Last 3 months of bank statements" },
+    "BANK_STMT_6M":        { "domainType": "BANK_STATEMENT",     "count": 6, "description": "Last 6 months of bank statements" },
+    "PAYSLIP_2":           { "domainType": "PAY_SLIP",           "count": 2, "description": "Last 2 payslips" },
+    "PAYSLIP_3":           { "domainType": "PAY_SLIP",           "count": 3, "description": "Last 3 payslips" },
+    "TAX_RETURN_1Y":       { "domainType": "TAX_RETURN",         "count": 1, "description": "Most recent tax return" },
+    "TAX_RETURN_2Y":       { "domainType": "TAX_RETURN",         "count": 2, "description": "Last 2 years tax returns" },
+    "GOV_ID":              { "domainType": "GOVERNMENT_ID",      "count": 1, "description": "Government-issued photo ID" },
+    "PROOF_OF_ADDRESS":    { "domainType": "PROOF_OF_ADDRESS",   "count": 1, "description": "Proof of current address" },
+    "EMPLOYMENT_LETTER":   { "domainType": "EMPLOYMENT_LETTER",  "count": 1, "description": "Employer confirmation letter" }
+  }
+}

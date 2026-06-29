@@ -89,6 +89,16 @@ public class GlobalExceptionHandler {
         return response(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", message);
     }
 
+    @ExceptionHandler(ApplicantVerificationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleApplicantVerificationFailed(ApplicantVerificationFailedException ex) {
+        return response(HttpStatus.UNAUTHORIZED, "APPLICANT_VERIFICATION_FAILED", ex.getMessage());
+    }
+
+    @ExceptionHandler(ApplicationNotAccessibleException.class)
+    public ResponseEntity<ErrorResponse> handleApplicationNotAccessible(ApplicationNotAccessibleException ex) {
+        return response(HttpStatus.UNPROCESSABLE_ENTITY, "APPLICATION_NOT_ACCESSIBLE", ex.getMessage());
+    }
+
     @ExceptionHandler(MissingRequestHeaderException.class)
     public ResponseEntity<ErrorResponse> handleMissingHeader(MissingRequestHeaderException ex) {
         return response(HttpStatus.BAD_REQUEST, "MISSING_HEADER", ex.getMessage());

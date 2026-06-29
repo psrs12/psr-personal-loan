@@ -1,11 +1,12 @@
 package com.personalloan.pricingorchestration.infrastructure.messaging;
 
+import com.personalloan.pricingorchestration.domain.pricing.FinalDecisionResponse;
 import com.personalloan.pricingorchestration.domain.pricing.port.PricingEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -80,6 +81,12 @@ public class KafkaPricingEventPublisher implements PricingEventPublisher {
     @Override
     public void publishFinalDecisionReferred(UUID applicationId) {
         publish(applicationId, "FinalDecisionReferred", Map.of("applicationId", applicationId));
+    }
+
+    @Override
+    public void publishFinalDecisionDocumentsRequired(UUID applicationId, List<FinalDecisionResponse.DocumentCode> documents) {
+        publish(applicationId, "FinalDecisionDocumentsRequired",
+                Map.of("applicationId", applicationId, "documents", documents));
     }
 
     private void publish(UUID applicationId, String eventType, Object payload) {

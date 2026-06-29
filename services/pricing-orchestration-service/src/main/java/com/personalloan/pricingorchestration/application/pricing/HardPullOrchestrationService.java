@@ -69,6 +69,10 @@ public class HardPullOrchestrationService {
                 applicationManagementPort.updateApplicationStatus(applicationId, "REFERRED");
                 eventPublisher.publishFinalDecisionReferred(applicationId);
             }
+            case DOCUMENTS_REQUIRED -> {
+                applicationManagementPort.updateApplicationStatus(applicationId, "DOCUMENTS_REQUIRED");
+                eventPublisher.publishFinalDecisionDocumentsRequired(applicationId, decision.documents());
+            }
         }
     }
 }

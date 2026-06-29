@@ -4,11 +4,13 @@ import { useSessionTimer } from '../../hooks/useSessionTimer'
 import Step1PersonalInfo from './Step1PersonalInfo'
 import Step2Employment from './Step2Employment'
 import Step3Identity from './Step3Identity'
+import OfferFlow from '../../../../pricing-offers-ui/src/components/OfferFlow'
 
 interface Props {
-  prefill: PrefillData | null   // null = Direct path
+  prefill: PrefillData | null
   selectedOffer: PricingOffer
-  onSubmit: (data: ApplicationFormData) => Promise<void>
+  onSubmit: (data: ApplicationFormData) => Promise<{ applicationId: string }>
+  apiBaseUrl?: string
 }
 
 const STEPS = ['Personal Info', 'Employment', 'Identity & Consent']
@@ -16,11 +18,11 @@ const STEPS = ['Personal Info', 'Employment', 'Identity & Consent']
 // 30 min from now if no session (Direct path)
 const FALLBACK_EXPIRY = new Date(Date.now() + 30 * 60 * 1000).toISOString()
 
-export default function TraditionalForm({ prefill, onSubmit }: Props) {
+export default function TraditionalForm({ prefill, onSubmit, apiBaseUrl = '/api/v1/application-management' }: Props) {
   const [step, setStep] = useState(0)
   const [formData, setFormData] = useState<Partial<ApplicationFormData>>({})
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [applicationId, setApplicationId] = useState<string | null>(null)
   const { remaining, isExpired } = useSessionTimer(prefill?.expiresAt ?? FALLBACK_EXPIRY)
 
   const isITA = !!prefill
@@ -30,8 +32,8 @@ export default function TraditionalForm({ prefill, onSubmit }: Props) {
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      await onSubmit(formData as ApplicationFormData)
-      setSubmitted(true)
+      const result = await onSubmit(formData as ApplicationFormData)
+      setApplicationId(result.applicationId)
     } finally {
       setSubmitting(false)
     }
@@ -49,17 +51,37 @@ export default function TraditionalForm({ prefill, onSubmit }: Props) {
     )
   }
 
-  if (submitted) {
+  if (applicationId) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-10 max-w-md text-center space-y-4">
-          <div className="text-5xl">🎉</div>
-          <h2 className="text-2xl font-bold text-gray-900">Application submitted!</h2>
-          <p className="text-gray-500">
-            We'll review your application and reach out within 1 business day
-            {prefill?.firstName ? `, ${prefill.firstName}` : ''}.
-          </p>
-        </div>
+      <div className="min-h-screen bg-gray-50 font-sans">
+        <header className="bg-white border-b border-gray-200 px-4 py-4">
+          <div className="max-w-2xl mx-auto flex items-center gap-2">
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-xs font-bold">PL</span>
+            </div>
+            <span className="font-semibold text-gray-900">Personal Loan</span>
+          </div>
+        </header>
+        <main className="max-w-2xl mx-auto px-4 py-8">
+          <div className="mb-4">
+            <div className="flex items-center gap-2 text-sm text-green-600 font-medium mb-1">
+              <span className="text-green-500">✓</span> Application submitted
+            </div>
+            <p className="text-xs text-gray-400">
+              We ran a soft credit check — this hasn't affected your score.
+              Select an offer below to proceed.
+            </p>
+          </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+            <OfferFlow
+              apiBaseUrl={apiBaseUrl}
+              applicationId={applicationId}
+              applicantReference={prefill?.invitationToken}
+              onComplete={() => {}}
+              onError={() => {}}
+            />
+          </div>
+        </main>
       </div>
     )
   }

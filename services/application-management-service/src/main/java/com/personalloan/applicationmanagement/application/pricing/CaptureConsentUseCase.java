@@ -1,7 +1,9 @@
 package com.personalloan.applicationmanagement.application.pricing;
 
 import com.personalloan.applicationmanagement.domain.application.Application;
+import com.personalloan.applicationmanagement.domain.application.ApplicationAuditRecord;
 import com.personalloan.applicationmanagement.domain.application.ApplicationStatus;
+import com.personalloan.applicationmanagement.domain.application.port.ApplicationAuditRepository;
 import com.personalloan.applicationmanagement.domain.application.port.ApplicationRepository;
 import com.personalloan.applicationmanagement.domain.exception.ApplicationNotFoundException;
 import com.personalloan.applicationmanagement.domain.pricing.ConsentCapturedEvent;
@@ -19,13 +21,16 @@ public class CaptureConsentUseCase {
     private final ApplicationRepository applicationRepository;
     private final ConsentRecordRepository consentRecordRepository;
     private final PricingEventPublisher pricingEventPublisher;
+    private final ApplicationAuditRepository applicationAuditRepository;
 
     public CaptureConsentUseCase(ApplicationRepository applicationRepository,
                                   ConsentRecordRepository consentRecordRepository,
-                                  PricingEventPublisher pricingEventPublisher) {
+                                  PricingEventPublisher pricingEventPublisher,
+                                  ApplicationAuditRepository applicationAuditRepository) {
         this.applicationRepository = applicationRepository;
         this.consentRecordRepository = consentRecordRepository;
         this.pricingEventPublisher = pricingEventPublisher;
+        this.applicationAuditRepository = applicationAuditRepository;
     }
 
     @Transactional
@@ -49,5 +54,12 @@ public class CaptureConsentUseCase {
                 command.selectedPricingOfferId(),
                 command.applicantReference(),
                 LocalDateTime.now()));
+
+        applicationAuditRepository.save(ApplicationAuditRecord.of(
+                command.applicationId(), application.getIntakeId(),
+                "CONSENT_CAPTURED",
+                "{\"consentChannel\":\"" + command.consentChannel() + "\",\"selectedPricingOfferId\":\"" +
+                command.selectedPricingOfferId() + "\"}"
+        ));
     }
 }

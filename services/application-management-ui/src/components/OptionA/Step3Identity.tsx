@@ -46,7 +46,6 @@ export default function Step3Identity({ data, onChange, onSubmit, onBack, submit
     !!data.dateOfBirth &&
     !!data.citizenship &&
     data.consentElectronicRecords &&
-    data.consentCreditCheck &&
     data.consentPrivacyPolicy
 
   return (
@@ -106,17 +105,16 @@ export default function Step3Identity({ data, onChange, onSubmit, onBack, submit
         </div>
       </div>
 
-      {/* Hard pull consent — explicit gate */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-amber-600 text-lg">⚠️</span>
-          <p className="text-sm font-semibold text-amber-800">Full credit check authorisation</p>
+      {/* Soft pull notice */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+        <span className="text-blue-500 text-lg mt-0.5">ℹ️</span>
+        <div>
+          <p className="text-sm font-medium text-blue-800">No impact to your credit score</p>
+          <p className="text-xs text-blue-700 mt-0.5">
+            Submitting your application uses a <strong>soft credit check</strong> only.
+            Your score will not be affected at this stage.
+          </p>
         </div>
-        <p className="text-xs text-amber-700 leading-relaxed">
-          Submitting this application will initiate a <strong>hard credit check</strong> with one
-          or more credit bureaus. This <strong>may affect your credit score</strong>. A soft check
-          was used to generate your offers and has already been completed.
-        </p>
       </div>
 
       {/* Consent */}
@@ -125,10 +123,6 @@ export default function Step3Identity({ data, onChange, onSubmit, onBack, submit
           {
             key: 'consentElectronicRecords' as keyof ApplicationFormData,
             label: 'I consent to receive electronic records and disclosures',
-          },
-          {
-            key: 'consentCreditCheck' as keyof ApplicationFormData,
-            label: 'I authorise a hard credit check with credit bureaus. I understand this may affect my credit score.',
           },
           {
             key: 'consentPrivacyPolicy' as keyof ApplicationFormData,

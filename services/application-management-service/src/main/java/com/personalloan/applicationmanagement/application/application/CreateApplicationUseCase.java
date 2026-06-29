@@ -85,7 +85,7 @@ public class CreateApplicationUseCase {
         persistApplicant(application.getApplicationId(), command);
         persistLoanRequest(application.getApplicationId(), command);
         persistApplicationOffer(application.getApplicationId(), intakeContext);
-        persistAuditRecord(application.getApplicationId(), command.intakeId());
+        persistAuditRecord(application.getApplicationId(), command.intakeId(), "INVITATION");
         publishEvent(application);
 
         return application;
@@ -97,7 +97,7 @@ public class CreateApplicationUseCase {
 
         persistApplicant(application.getApplicationId(), command);
         persistLoanRequest(application.getApplicationId(), command);
-        persistAuditRecord(application.getApplicationId(), null);
+        persistAuditRecord(application.getApplicationId(), null, "DIRECT");
         publishEvent(application);
 
         return application;
@@ -137,9 +137,10 @@ public class CreateApplicationUseCase {
         applicationOfferRepository.save(offer);
     }
 
-    private void persistAuditRecord(UUID applicationId, UUID intakeId) {
+    private void persistAuditRecord(UUID applicationId, UUID intakeId, String source) {
+        String payload = "{\"source\":\"" + source + "\",\"intakeId\":\"" + intakeId + "\"}";
         applicationAuditRepository.save(
-                ApplicationAuditRecord.of(applicationId, intakeId, "APPLICATION_CREATED", null)
+                ApplicationAuditRecord.of(applicationId, intakeId, "APPLICATION_CREATED", payload)
         );
     }
 

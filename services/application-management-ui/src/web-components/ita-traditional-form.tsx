@@ -39,10 +39,9 @@ class ITATraditionalFormElement extends HTMLElement {
         body: JSON.stringify(data),
       })
       if (!response.ok) throw new Error('Submission failed')
-      el.dispatchEvent(new CustomEvent('application-submitted', {
-        detail: await response.json(),
-        bubbles: true,
-      }))
+      const result = await response.json()
+      el.dispatchEvent(new CustomEvent('application-submitted', { detail: result, bubbles: true }))
+      return result as { applicationId: string }
     }
 
     this.root?.render(

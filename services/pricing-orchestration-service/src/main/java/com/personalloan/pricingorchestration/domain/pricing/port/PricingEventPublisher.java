@@ -1,5 +1,8 @@
 package com.personalloan.pricingorchestration.domain.pricing.port;
 
+import com.personalloan.pricingorchestration.domain.pricing.FinalDecisionResponse;
+
+import java.util.List;
 import java.util.UUID;
 
 public interface PricingEventPublisher {
@@ -14,4 +17,5 @@ public interface PricingEventPublisher {
     void publishFinalDecisionApproved(UUID applicationId);
     void publishFinalDecisionDeclined(UUID applicationId, String reasonCode);
     void publishFinalDecisionReferred(UUID applicationId);
+    void publishFinalDecisionDocumentsRequired(UUID applicationId, List<FinalDecisionResponse.DocumentCode> documents);
 }

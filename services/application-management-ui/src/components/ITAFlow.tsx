@@ -19,11 +19,12 @@ interface Props {
   tokenFromUrl: string | null
   apiBaseUrl: string
   FormComponent: React.ComponentType<{
-    prefill: PrefillData | null    // null = Direct path (no pre-fill)
+    prefill: PrefillData | null
     selectedOffer: PricingOffer
-    onSubmit: (d: ApplicationFormData) => Promise<void>
+    apiBaseUrl?: string
+    onSubmit: (d: ApplicationFormData) => Promise<{ applicationId: string }>
   }>
-  onSubmit: (data: ApplicationFormData) => Promise<void>
+  onSubmit: (data: ApplicationFormData) => Promise<{ applicationId: string }>
 }
 
 export default function ITAFlow({ tokenFromUrl, apiBaseUrl, FormComponent, onSubmit }: Props) {
@@ -51,6 +52,7 @@ export default function ITAFlow({ tokenFromUrl, apiBaseUrl, FormComponent, onSub
     <FormComponent
       prefill={prefill}
       selectedOffer={PLACEHOLDER_OFFER}
+      apiBaseUrl={apiBaseUrl}
       onSubmit={onSubmit}
     />
   )

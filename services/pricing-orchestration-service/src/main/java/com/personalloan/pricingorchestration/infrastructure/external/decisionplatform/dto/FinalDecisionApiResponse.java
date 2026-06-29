@@ -1,3 +1,11 @@
 package com.personalloan.pricingorchestration.infrastructure.external.decisionplatform.dto;
 
-public record FinalDecisionApiResponse(String outcome, String reasonCode) {}
+import java.util.List;
+
+public record FinalDecisionApiResponse(
+        String outcome,
+        String reasonCode,
+        List<DocumentCodeDto> documents
+) {
+    public record DocumentCodeDto(String decisionEngineCode, int count) {}
+}

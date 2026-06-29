@@ -1,7 +1,8 @@
 package com.personalloan.applicationmanagement.application.pricing;
 
 import com.personalloan.applicationmanagement.domain.application.Application;
-import com.personalloan.applicationmanagement.domain.application.ApplicationStatus;
+import com.personalloan.applicationmanagement.domain.application.ApplicationAuditRecord;
+import com.personalloan.applicationmanagement.domain.application.port.ApplicationAuditRepository;
 import com.personalloan.applicationmanagement.domain.application.port.ApplicationRepository;
 import com.personalloan.applicationmanagement.domain.exception.ApplicationNotFoundException;
 import com.personalloan.applicationmanagement.domain.pricing.PricingOffer;
@@ -18,14 +19,17 @@ public class GetPricingOffersUseCase {
 
     private final ApplicationRepository applicationRepository;
     private final PricingOfferRepository pricingOfferRepository;
+    private final ApplicationAuditRepository applicationAuditRepository;
 
     public GetPricingOffersUseCase(ApplicationRepository applicationRepository,
-                                   PricingOfferRepository pricingOfferRepository) {
+                                   PricingOfferRepository pricingOfferRepository,
+                                   ApplicationAuditRepository applicationAuditRepository) {
         this.applicationRepository = applicationRepository;
         this.pricingOfferRepository = pricingOfferRepository;
+        this.applicationAuditRepository = applicationAuditRepository;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<PricingOffer> execute(UUID applicationId) {
         Application application = applicationRepository.findByApplicationId(applicationId)
                 .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
@@ -38,6 +42,12 @@ public class GetPricingOffersUseCase {
                 .filter(o -> PricingOfferStatus.ACTIVE.equals(o.getOfferStatus()))
                 .filter(o -> !o.isExpired())
                 .toList();
+
+        applicationAuditRepository.save(ApplicationAuditRecord.of(
+                applicationId, application.getIntakeId(),
+                "PRICING_OFFERS_VIEWED",
+                "{\"offerCount\":" + offers.size() + "}"
+        ));
 
         return offers;
     }

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.*;
@@ -48,7 +49,7 @@ class HardPullOrchestrationServiceTest {
     void initiateHardPull_approved_transitionsToApprovedAndPublishesEvent() {
         givenHardPullSucceeds("hard-ref-123");
         when(decisionPlatformPort.requestFinalDecision(applicationId, selectedOfferId, "hard-ref-123"))
-                .thenReturn(new FinalDecisionResponse(FinalDecisionResponse.DecisionOutcome.APPROVED, null));
+                .thenReturn(new FinalDecisionResponse(FinalDecisionResponse.DecisionOutcome.APPROVED, null, List.of()));
 
         service.initiateHardPull(applicationId, selectedOfferId, null);
 
@@ -60,7 +61,7 @@ class HardPullOrchestrationServiceTest {
     void initiateHardPull_declined_transitionsToDeclinedAndPublishesEvent() {
         givenHardPullSucceeds("hard-ref-456");
         when(decisionPlatformPort.requestFinalDecision(applicationId, selectedOfferId, "hard-ref-456"))
-                .thenReturn(new FinalDecisionResponse(FinalDecisionResponse.DecisionOutcome.DECLINED, "HIGH_DTI"));
+                .thenReturn(new FinalDecisionResponse(FinalDecisionResponse.DecisionOutcome.DECLINED, "HIGH_DTI", List.of()));
 
         service.initiateHardPull(applicationId, selectedOfferId, null);
 
@@ -72,12 +73,27 @@ class HardPullOrchestrationServiceTest {
     void initiateHardPull_referred_transitionsToReferredAndPublishesEvent() {
         givenHardPullSucceeds("hard-ref-789");
         when(decisionPlatformPort.requestFinalDecision(applicationId, selectedOfferId, "hard-ref-789"))
-                .thenReturn(new FinalDecisionResponse(FinalDecisionResponse.DecisionOutcome.REFERRED, null));
+                .thenReturn(new FinalDecisionResponse(FinalDecisionResponse.DecisionOutcome.REFERRED, null, List.of()));
 
         service.initiateHardPull(applicationId, selectedOfferId, null);
 
         verify(applicationManagementPort).updateApplicationStatus(applicationId, "REFERRED");
         verify(eventPublisher).publishFinalDecisionReferred(applicationId);
+    }
+
+    @Test
+    void initiateHardPull_documentsRequired_transitionsToDocumentsRequiredAndPublishesEvent() {
+        givenHardPullSucceeds("hard-ref-doc");
+        List<FinalDecisionResponse.DocumentCode> docs = List.of(
+                new FinalDecisionResponse.DocumentCode("BANK_STMT_3M", 3),
+                new FinalDecisionResponse.DocumentCode("PAYSLIP_2", 2));
+        when(decisionPlatformPort.requestFinalDecision(applicationId, selectedOfferId, "hard-ref-doc"))
+                .thenReturn(new FinalDecisionResponse(FinalDecisionResponse.DecisionOutcome.DOCUMENTS_REQUIRED, null, docs));
+
+        service.initiateHardPull(applicationId, selectedOfferId, null);
+
+        verify(applicationManagementPort).updateApplicationStatus(applicationId, "DOCUMENTS_REQUIRED");
+        verify(eventPublisher).publishFinalDecisionDocumentsRequired(applicationId, docs);
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.personalloan.applicationmanagement.domain.application.port.*;
 import com.personalloan.applicationmanagement.domain.invitation.ApplicationSource;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -53,6 +54,11 @@ public class ApplicationJpaAdapter implements ApplicationRepository, ApplicantRe
     }
 
     @Override
+    public Optional<Applicant> findByApplicationId(UUID applicationId) {
+        return applicantRepo.findByApplicationId(applicationId).map(this::toApplicantDomain);
+    }
+
+    @Override
     public LoanRequest save(LoanRequest loanRequest) {
         loanRequestRepo.save(toEntity(loanRequest));
         return loanRequest;
@@ -74,6 +80,37 @@ public class ApplicationJpaAdapter implements ApplicationRepository, ApplicantRe
         entity.setEventTimestamp(record.eventTimestamp());
         entity.setPayload(record.payload());
         auditRepo.save(entity);
+    }
+
+    @Override
+    public List<ApplicationAuditRecord> findByApplicationId(UUID applicationId) {
+        return auditRepo.findByApplicationIdOrderByEventTimestampAsc(applicationId)
+                .stream()
+                .map(this::toAuditDomain)
+                .toList();
+    }
+
+    @Override
+    public List<ApplicationAuditRecord> findByApplicationIdOrIntakeId(UUID applicationId, UUID intakeId) {
+        return auditRepo.findByApplicationIdOrIntakeIdOrderByEventTimestampAsc(applicationId, intakeId)
+                .stream()
+                .map(this::toAuditDomain)
+                .toList();
+    }
+
+    private Applicant toApplicantDomain(ApplicantJpaEntity e) {
+        return Applicant.reconstitute(
+                e.getApplicantId(), e.getApplicationId(), e.getFirstName(), e.getLastName(),
+                e.getDateOfBirth(), Citizenship.valueOf(e.getCitizenship()), e.getSsnToken(),
+                e.getEmail(), e.getPhone(), e.getStreet(), e.getCity(), e.getState(), e.getZip(),
+                e.getEmployerName(),
+                e.getEmploymentStatus() != null ? EmploymentStatus.valueOf(e.getEmploymentStatus()) : null,
+                e.getAnnualIncome(), e.getCreatedTimestamp());
+    }
+
+    private ApplicationAuditRecord toAuditDomain(ApplicationAuditJpaEntity e) {
+        return new ApplicationAuditRecord(e.getAuditId(), e.getApplicationId(), e.getIntakeId(),
+                e.getEventType(), e.getEventTimestamp(), e.getPayload());
     }
 
     private ApplicationJpaEntity toEntity(Application app) {

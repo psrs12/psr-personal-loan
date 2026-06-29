@@ -15,6 +15,12 @@ public enum ApplicationStatus {
     APPROVED,
     DECLINED,
     REFERRED,
+    DOCUMENTS_REQUIRED,
+    OFFER_ACCEPTED,
+    UNDERWRITING,
+    FUNDING_PENDING,
+    FUNDED,
+    COMPLETED,
     CANCELLED,
     EXPIRED
 }

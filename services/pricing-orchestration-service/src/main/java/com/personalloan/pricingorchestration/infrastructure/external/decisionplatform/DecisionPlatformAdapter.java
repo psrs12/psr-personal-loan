@@ -61,9 +61,15 @@ public class DecisionPlatformAdapter implements DecisionPlatformPort {
                 .retrieve()
                 .body(FinalDecisionApiResponse.class);
 
+        List<FinalDecisionResponse.DocumentCode> documents = apiResponse.documents() == null ? List.of() :
+                apiResponse.documents().stream()
+                        .map(d -> new FinalDecisionResponse.DocumentCode(d.decisionEngineCode(), d.count()))
+                        .toList();
+
         return new FinalDecisionResponse(
                 FinalDecisionResponse.DecisionOutcome.valueOf(apiResponse.outcome()),
-                apiResponse.reasonCode());
+                apiResponse.reasonCode(),
+                documents);
     }
 
     private PricingEngineResponse toDomain(PricingEngineApiResponse api) {

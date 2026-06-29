@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { ApplicationFormData, EmploymentType, LoanPurpose, PrefillData, PricingOffer } from '../../types'
 import { useSessionTimer } from '../../hooks/useSessionTimer'
+import OfferFlow from '../../../../pricing-offers-ui/src/components/OfferFlow'
 
 interface Props {
-  prefill: PrefillData | null   // null = Direct path
+  prefill: PrefillData | null
   selectedOffer: PricingOffer
-  onSubmit: (data: ApplicationFormData) => Promise<void>
+  onSubmit: (data: ApplicationFormData) => Promise<{ applicationId: string }>
+  apiBaseUrl?: string
 }
 
 const PURPOSES: { value: LoanPurpose; label: string; icon: string }[] = [
@@ -109,7 +111,7 @@ function CurrencyInput({ label, value, onChange, optional }: {
 
 const FALLBACK_EXPIRY = new Date(Date.now() + 30 * 60 * 1000).toISOString()
 
-export default function ProgressiveForm({ prefill, selectedOffer, onSubmit }: Props) {
+export default function ProgressiveForm({ prefill, selectedOffer, onSubmit, apiBaseUrl = '/api/v1/application-management' }: Props) {
   const isITA = !!prefill
   const [data, setData] = useState<Partial<ApplicationFormData>>({
     loanAmount: selectedOffer.amount || undefined,
@@ -117,6 +119,7 @@ export default function ProgressiveForm({ prefill, selectedOffer, onSubmit }: Pr
   })
   const [section, setSection] = useState<'loan' | 'employment' | 'identity' | 'done'>('loan')
   const [submitting, setSubmitting] = useState(false)
+  const [applicationId, setApplicationId] = useState<string | null>(null)
   const { remaining, isExpired } = useSessionTimer(prefill?.expiresAt ?? FALLBACK_EXPIRY)
 
   const patch = (p: Partial<ApplicationFormData>) => setData(prev => ({ ...prev, ...p }))
@@ -131,13 +134,13 @@ export default function ProgressiveForm({ prefill, selectedOffer, onSubmit }: Pr
     !!data.phone && !!data.email
   const identityComplete =
     (data.ssn?.length ?? 0) === 9 && !!data.dateOfBirth && !!data.citizenship &&
-    data.consentElectronicRecords && data.consentCreditCheck && data.consentPrivacyPolicy
+    data.consentElectronicRecords && data.consentPrivacyPolicy
 
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
-      await onSubmit(data as ApplicationFormData)
-      setSection('done')
+      const result = await onSubmit(data as ApplicationFormData)
+      setApplicationId(result.applicationId)
     } finally {
       setSubmitting(false)
     }
@@ -155,23 +158,37 @@ export default function ProgressiveForm({ prefill, selectedOffer, onSubmit }: Pr
     )
   }
 
-  if (section === 'done') {
+  if (applicationId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-10 max-w-sm text-center space-y-6">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto text-4xl">
-            🎉
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 font-sans">
+        <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3">
+          <div className="max-w-xl mx-auto flex items-center gap-2">
+            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-xs font-bold">PL</span>
+            </div>
+            <span className="font-semibold text-gray-900 text-sm">Personal Loan</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">You're all set{prefill?.firstName ? `, ${prefill.firstName}` : ''}!</h2>
-          <p className="text-gray-500 text-sm">
-            Your application for{' '}
-            <strong className="text-gray-800">${selectedOffer.amount.toLocaleString()}</strong> has been submitted.
-            We'll review and reach out within 1 business day.
-          </p>
-          <div className="bg-brand-50 rounded-2xl p-4 text-sm text-brand-800">
-            Application ID will be emailed to you
+        </header>
+        <main className="max-w-xl mx-auto px-4 py-8">
+          <div className="mb-4">
+            <div className="flex items-center gap-2 text-sm text-green-600 font-medium mb-1">
+              <span className="text-green-500">✓</span> Application submitted
+            </div>
+            <p className="text-xs text-gray-400">
+              We ran a soft credit check — this hasn't affected your score.
+              Select an offer below to proceed.
+            </p>
           </div>
-        </div>
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
+            <OfferFlow
+              apiBaseUrl={apiBaseUrl}
+              applicationId={applicationId}
+              applicantReference={prefill?.invitationToken}
+              onComplete={() => {}}
+              onError={() => {}}
+            />
+          </div>
+        </main>
       </div>
     )
   }
@@ -574,24 +591,22 @@ export default function ProgressiveForm({ prefill, selectedOffer, onSubmit }: Pr
               </div>
             </div>
 
-            {/* Hard pull consent — explicit gate */}
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">⚠️</span>
-                <p className="text-sm font-semibold text-amber-800">Full credit check</p>
+            {/* Soft pull notice */}
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex items-start gap-3">
+              <span className="text-blue-500 text-base mt-0.5">ℹ️</span>
+              <div>
+                <p className="text-sm font-medium text-blue-800">No impact to your credit score</p>
+                <p className="text-xs text-blue-700 mt-0.5">
+                  Submitting uses a <strong>soft credit check</strong> only.
+                  If you proceed to accept an offer, a hard check will be explained separately.
+                </p>
               </div>
-              <p className="text-xs text-amber-700 leading-relaxed">
-                Submitting will initiate a <strong>hard credit check</strong> with one or more
-                credit bureaus. This <strong>may affect your credit score</strong>.
-                The soft check used to generate your offers has already been completed.
-              </p>
             </div>
 
             {/* Consent */}
             <div className="space-y-3 pt-2 border-t border-gray-100">
               {[
                 { key: 'consentElectronicRecords' as const, label: 'I agree to receive electronic records and disclosures' },
-                { key: 'consentCreditCheck' as const,       label: 'I authorise a hard credit check with credit bureaus. I understand this may affect my credit score.' },
                 { key: 'consentPrivacyPolicy' as const,     label: 'I agree to the Privacy Policy and Terms of Service' },
               ].map(item => (
                 <label key={item.key} className="flex items-start gap-3 cursor-pointer group">

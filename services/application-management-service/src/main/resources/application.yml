@@ -24,6 +24,13 @@ spring:
     baseline-on-migrate: true
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: application-management-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.personalloan.*"
+        spring.json.use.type.headers: false
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -49,9 +56,20 @@ kafka:
   topics:
     application-events: application-events
     consent-events: consent-events
+    pricing-events: pricing-events
+    offer-acceptance-events: offer-acceptance-events
+    document-events: document-events
 
 session:
   expiration-minutes: 30
+
+verification:
+  stub:
+    enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-in-production}
+  expiry-minutes: 30
 
 resilience4j:
   circuitbreaker:

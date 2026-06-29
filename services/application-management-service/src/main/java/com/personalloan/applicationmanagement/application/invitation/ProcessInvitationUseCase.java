@@ -1,5 +1,7 @@
 package com.personalloan.applicationmanagement.application.invitation;
 
+import com.personalloan.applicationmanagement.domain.application.ApplicationAuditRecord;
+import com.personalloan.applicationmanagement.domain.application.port.ApplicationAuditRepository;
 import com.personalloan.applicationmanagement.domain.application.port.ApplicationRepository;
 import com.personalloan.applicationmanagement.domain.exception.DuplicateApplicationException;
 import com.personalloan.applicationmanagement.domain.exception.OfferExpiredException;
@@ -20,6 +22,7 @@ public class ProcessInvitationUseCase {
     private final InvitationSessionRepository invitationSessionRepository;
     private final ApplicationIntakeContextRepository applicationIntakeContextRepository;
     private final ApplicationRepository applicationRepository;
+    private final ApplicationAuditRepository applicationAuditRepository;
 
     @Value("${session.expiration-minutes:30}")
     private int sessionExpirationMinutes;
@@ -28,12 +31,14 @@ public class ProcessInvitationUseCase {
                                      CustomerProfilePort customerProfilePort,
                                      InvitationSessionRepository invitationSessionRepository,
                                      ApplicationIntakeContextRepository applicationIntakeContextRepository,
-                                     ApplicationRepository applicationRepository) {
+                                     ApplicationRepository applicationRepository,
+                                     ApplicationAuditRepository applicationAuditRepository) {
         this.offerManagementPort = offerManagementPort;
         this.customerProfilePort = customerProfilePort;
         this.invitationSessionRepository = invitationSessionRepository;
         this.applicationIntakeContextRepository = applicationIntakeContextRepository;
         this.applicationRepository = applicationRepository;
+        this.applicationAuditRepository = applicationAuditRepository;
     }
 
     @Transactional
@@ -73,6 +78,13 @@ public class ProcessInvitationUseCase {
 
         session.complete();
         invitationSessionRepository.save(session);
+
+        applicationAuditRepository.save(ApplicationAuditRecord.of(
+                null, intakeContext.getIntakeId(),
+                "INVITATION_PROCESSED",
+                "{\"invitationId\":\"" + invitationId + "\",\"offerId\":\"" + offerDetails.offerId() +
+                "\",\"prefillStatus\":\"" + prefillStatus.name() + "\"}"
+        ));
 
         return new ProcessInvitationResult(intakeContext.getIntakeId(), session.getSessionId(),
                 offerDetails, customerPrefill.orElse(null), prefillStatus);

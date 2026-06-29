@@ -1,535 +1,265 @@
-# application-state-machine.md
-
-# Personal Loan Acquisition
+# Personal Loan Acquisition Platform
 
 ## Application State Machine Specification
 
-Version: 1.0
-
-Status: Draft
-
+Version: 2.0
+Status: Current
 Owner: Personal Loan Acquisition Platform
 
 ---
 
 # 1. Purpose
 
-This document defines the standard application lifecycle states and state transition rules for the Personal Loan Acquisition Platform.
+This document defines the complete application lifecycle states and valid state transitions for the Personal Loan Acquisition Platform.
 
-All acquisition modules must follow this state model.
-
-The state machine ensures:
-
-* Consistent application processing
-* Controlled workflow progression
-* Auditability
-* Error handling
-* Recovery from failures
-* Clear ownership boundaries
+All services that read or write application status must comply with this specification. The `application-management-service` is the sole authority for enforcing and persisting state.
 
 ---
 
-# 2. Scope
+# 2. Complete State Diagram
 
-## Applies To
-
-* Invitation To Apply
-* Application Management
-* Identity Verification Orchestration
-* Fraud Verification Orchestration
-* Credit Evaluation Orchestration
-* Decision Orchestration
-* Offer Acceptance
-* Document Collection
-* Underwriting
-* Bank Verification
-* Funding Request
-
----
-
-# 3. Application Lifecycle Overview
-
-```text
-CREATED
-
-   |
-   v
-
-STARTED
-
-   |
-   v
-
-IN_PROGRESS
-
-   |
-   v
-
-SUBMITTED
-
-   |
-   v
-
-PROCESSING
-
-   |
-   +----------------+
-   |                |
-   v                v
-
-APPROVED        DECLINED
-   |
-   v
-
-OFFER_PENDING
-
-   |
-   v
-
-OFFER_ACCEPTED
-
-   |
-   v
-
-DOCUMENT_PENDING
-
-   |
-   v
-
-UNDERWRITING
-
-   |
-   +---------------+
-   |               |
-   v               v
-
-APPROVED        REFERRED
-
-   |
-   v
-
-FUNDING_PENDING
-
-   |
-   v
-
-FUNDED
-
-   |
-   v
-
-COMPLETED
+```
+                              ┌──────────┐
+                              │  CREATED │
+                              └────┬─────┘
+                                   │ applicant begins
+                                   ▼
+                              ┌──────────┐
+                              │  STARTED │
+                              └────┬─────┘
+                                   │ data entered
+                                   ▼
+                           ┌─────────────┐
+                           │ IN_PROGRESS │
+                           └──────┬──────┘
+                                  │ applicant submits
+                                  ▼
+                           ┌───────────┐
+                           │ SUBMITTED │
+                           └─────┬─────┘
+                                 │ validation complete
+                                 ▼
+                          ┌────────────┐
+                          │ PROCESSING │
+                          └─────┬──────┘
+                                │
+               ┌────────────────┼──────────────────┐
+               │                │                  │
+               ▼                ▼                  ▼
+         ┌──────────┐     ┌──────────┐      ┌──────────┐
+         │ DECLINED │     │ APPROVED │      │ REFERRED │
+         │(terminal)│     └────┬─────┘      │(manual UW│
+         └──────────┘          │            └──────────┘
+                               │
+              ┌────────────────┤
+              │                │
+              ▼                │ (no docs needed)
+ ┌─────────────────────┐       │
+ │  DOCUMENTS_REQUIRED │       │
+ └──────────┬──────────┘       │
+            │ DocumentsCompleted event
+            ▼                  │
+     ┌────────────┐            │ ESignCompleted event
+     │UNDERWRITING│            │
+     └─────┬──────┘            │
+           │ review complete   │
+           ▼                   │
+     ┌──────────┐              │
+     │ APPROVED │◄─────────────┘
+     └────┬─────┘
+          │ ESignCompleted event
+          ▼
+   ┌───────────────┐
+   │ OFFER_ACCEPTED│
+   └──────┬────────┘
+          │
+          ▼
+   ┌───────────────┐
+   │FUNDING_PENDING│
+   └──────┬────────┘
+          │ funding complete
+          ▼
+      ┌────────┐
+      │ FUNDED │
+      └───┬────┘
+          │
+          ▼
+     ┌──────────┐
+     │ COMPLETED│ (terminal)
+     └──────────┘
 ```
 
 ---
 
-# 4. State Definitions
+# 3. State Definitions
 
 ## CREATED
-
-Application record exists.
-
-Entry points:
-
-* Invitation flow
-* Direct application flow
-
-Conditions:
-
-* Application ID generated
-* Minimal data available
-
----
+Application record exists in the system. Triggered by the ITA flow or direct application entry. Minimal data available at this point.
 
 ## STARTED
-
-Customer has entered application journey.
-
-Required:
-
-* Application ID
-* Applicant reference
-* Source channel
-
----
+The applicant has entered the application journey. Application ID, applicant reference, and source channel are established.
 
 ## IN_PROGRESS
-
-Customer is actively completing application.
-
-Allowed:
-
-* Update information
-* Save progress
-* Resume later
-
----
+The applicant is actively completing their application. Data can be updated and progress saved for resumption.
 
 ## SUBMITTED
-
-Customer has completed required information.
-
-Triggers:
-
-* Identity verification
-* Fraud verification
-* Credit evaluation
-
----
+The applicant has completed and submitted all required application information. Enterprise evaluations are triggered.
 
 ## PROCESSING
-
-Application is undergoing enterprise evaluations.
-
-Includes:
-
-* Identity checks
-* Fraud verification
-* Credit evaluation
-* Decision processing
-
----
+The application is undergoing enterprise evaluations: identity verification, fraud check, soft credit pull, and decisioning.
 
 ## APPROVED
-
-Decision Platform returned approval.
-
-Next:
-
-Offer presentation
-
----
+The Decision Engine returned an approval outcome. The application is ready for offer presentation and e-signature.
 
 ## DECLINED
-
-Decision Platform returned decline.
-
-Terminal state.
-
----
+The Decision Engine returned a decline outcome. **Terminal state.** An adverse action notice is issued.
 
 ## REFERRED
+The Decision Engine referred the application for manual underwriting — no document list is associated. Human review determines the outcome.
 
-Application requires manual processing.
-
-Examples:
-
-* Manual underwriting
-* Additional verification
-* Exception review
-
----
-
-## OFFER_PENDING
-
-Approved application awaiting offer selection.
-
----
+## DOCUMENTS_REQUIRED
+The Decision Engine requested specific documents before a final decision can be made. The document-service receives the document type codes and creates `DocumentRequirement` records for the applicant to fulfil.
 
 ## OFFER_ACCEPTED
-
-Customer accepted offer.
-
-Triggers:
-
-* Document collection
-* Funding preparation
-
----
-
-## DOCUMENT_PENDING
-
-Required documents are outstanding.
-
----
+The applicant has reviewed all declarations and completed the e-signature. Triggered by the `ESignCompleted` event from offer-acceptance-service.
 
 ## UNDERWRITING
-
-Manual review is in progress.
-
----
+All required documents have been submitted and verified. The application is under manual review. Triggered by the `DocumentsCompleted` event from document-service.
 
 ## FUNDING_PENDING
-
-Funding request submitted.
-
-Waiting for funding completion.
-
----
+A funding request has been submitted to the Funding Platform. Awaiting disbursement confirmation.
 
 ## FUNDED
+Loan funds have been disbursed successfully.
 
-Loan funding completed.
+## COMPLETED
+The full application lifecycle is complete. **Terminal state.**
+
+## CANCELLED
+The applicant or an agent cancelled the application. **Terminal state.**
+
+## EXPIRED
+The application exceeded its validity window without progression. **Terminal state.**
 
 ---
 
-## COMPLETED
+# 4. State Transition Table
 
-Application lifecycle complete.
+| From | To | Trigger | Mechanism |
+|------|----|---------|-----------|
+| CREATED | STARTED | Applicant begins journey | Direct API call |
+| STARTED | IN_PROGRESS | Applicant enters data | Direct API call |
+| IN_PROGRESS | SUBMITTED | Applicant submits form | Direct API call |
+| SUBMITTED | PROCESSING | Validation passes | Direct API call |
+| PROCESSING | APPROVED | Decision Engine: approved | pricing-orchestration-service → REST |
+| PROCESSING | DECLINED | Decision Engine: declined | pricing-orchestration-service → REST |
+| PROCESSING | REFERRED | Decision Engine: manual review | pricing-orchestration-service → REST |
+| PROCESSING | DOCUMENTS_REQUIRED | Decision Engine: docs required | document-service → REST (after Kafka event) |
+| APPROVED | OFFER_ACCEPTED | ESignCompleted event | Kafka consumer in app-management-service |
+| DOCUMENTS_REQUIRED | UNDERWRITING | DocumentsCompleted event | Kafka consumer in app-management-service |
+| UNDERWRITING | APPROVED | Manual review complete | Direct API call |
+| OFFER_ACCEPTED | FUNDING_PENDING | Funding request submitted | funding-request-service (planned) |
+| FUNDING_PENDING | FUNDED | Funding confirmation received | funding-request-service (planned) |
+| FUNDED | COMPLETED | Final completion | application-management-service |
+| Any non-terminal | CANCELLED | Agent or applicant cancels | Direct API call |
+| Any non-terminal | EXPIRED | TTL exceeded | Scheduled job |
 
 ---
 
 # 5. Terminal States
 
-The following are terminal:
+The following states are terminal. No further transitions are permitted:
 
-```text
-DECLINED
+| State | Reason |
+|-------|--------|
+| DECLINED | Credit or fraud decision negative |
+| CANCELLED | Explicit cancellation |
+| EXPIRED | TTL exceeded |
+| COMPLETED | Lifecycle complete |
 
-FUNDED
-
-COMPLETED
-
-CANCELLED
-
-EXPIRED
-```
+Applicant login (via `POST /applications/login`) is rejected if the application is in a terminal state.
 
 ---
 
-# 6. State Transition Rules
+# 6. Invalid Transitions
 
-| Current State    | Next State       | Trigger                |
-| ---------------- | ---------------- | ---------------------- |
-| CREATED          | STARTED          | Applicant begins       |
-| STARTED          | IN_PROGRESS      | Data entered           |
-| IN_PROGRESS      | SUBMITTED        | Applicant submits      |
-| SUBMITTED        | PROCESSING       | Validation complete    |
-| PROCESSING       | APPROVED         | Decision approved      |
-| PROCESSING       | DECLINED         | Decision declined      |
-| PROCESSING       | REFERRED         | Manual review required |
-| APPROVED         | OFFER_PENDING    | Offer requested        |
-| OFFER_PENDING    | OFFER_ACCEPTED   | Customer accepts       |
-| OFFER_ACCEPTED   | DOCUMENT_PENDING | Documents required     |
-| DOCUMENT_PENDING | UNDERWRITING     | Review needed          |
-| UNDERWRITING     | APPROVED         | Review complete        |
-| UNDERWRITING     | REFERRED         | Additional review      |
-| APPROVED         | FUNDING_PENDING  | Funding requested      |
-| FUNDING_PENDING  | FUNDED           | Funding complete       |
-| FUNDED           | COMPLETED        | Final completion       |
+The `ApplicationStateMachine` class enforces the valid transition map. Any attempt to transition outside the allowed set throws `InvalidStateTransitionException`.
 
----
-
-# 7. Invalid Transitions
-
-The system must reject:
+Examples of explicitly rejected transitions:
 
 ```
-DECLINED → PROCESSING
-
-FUNDED → IN_PROGRESS
-
-COMPLETED → SUBMITTED
-
+DECLINED    → any state
+COMPLETED   → any state
+APPROVED    → PROCESSING
 OFFER_ACCEPTED → CREATED
-
-CANCELLED → PROCESSING
 ```
 
 ---
 
-# 8. Ownership Rules
+# 7. State Ownership and Enforcement
 
-Application Service owns:
+`application-management-service` is the single source of truth for application state.
 
-* Application state
-* State transition validation
-* State history
+External services trigger transitions through two mechanisms:
 
-External platforms own:
+**A. Direct REST call** — orchestration services call `PATCH /applications/{id}/status` to update state after receiving a synchronous decision.
 
-Identity Verification Status
+**B. Kafka event consumption** — domain events published by other services are consumed by `application-management-service` to drive transitions:
 
-Fraud Result
-
-Credit Result
-
-Decision Result
-
-Funding Result
-
-External results update application state through events.
+| Consumer Class | Event Consumed | Transition |
+|----------------|----------------|------------|
+| `ESignCompletedEventConsumer` | ESignCompleted | APPROVED → OFFER_ACCEPTED |
+| `DocumentsCompletedEventConsumer` | DocumentsCompleted | DOCUMENTS_REQUIRED → UNDERWRITING |
 
 ---
 
-# 9. State Change Events
+# 8. State History and Audit
 
-## Published Events
+Every state change is persisted in the `application_event` table with:
 
-ApplicationCreated
+- `application_id`
+- `event_type`
+- `previous_status`
+- `new_status`
+- `occurred_at`
+- `correlation_id`
+- `actor`
 
-ApplicationStarted
-
-ApplicationUpdated
-
-ApplicationSubmitted
-
-ApplicationProcessingStarted
-
-ApplicationApproved
-
-ApplicationDeclined
-
-ApplicationReferred
-
-OfferAccepted
-
-DocumentsCompleted
-
-UnderwritingCompleted
-
-FundingRequested
-
-FundingCompleted
-
-ApplicationCompleted
+The `GET /applications/{id}/timeline` endpoint returns all events chronologically, including pre-application events from the invitation flow (joined via `intake_id`). This supports call centre agents reviewing the complete application history.
 
 ---
 
-# 10. Event Consumers
+# 9. Applicant Self-Service Access
 
-Identity Service
+After the decision phase, applicants access their application via the self-service portal:
 
-Fraud Service
+1. Applicant submits `applicationId + last4SSN + dateOfBirth` to `POST /applications/login`
+2. `application-management-service` verifies identity via `VerificationPort`
+3. A JJWT session token is returned (30-minute expiry)
+4. The `application-management-ui` shell polls `GET /applications/{id}` every 3 seconds
+5. The shell routes to the appropriate micro-frontend based on `applicationStatus`
 
-Credit Service
-
-Decision Service
-
-Offer Acceptance Service
-
-Document Service
-
-Underwriting Service
-
-Funding Service
-
-Notification Service
+| Application Status | Micro-Frontend Shown |
+|-------------------|-----------------------|
+| APPROVED | OfferAcceptanceMfe (declarations + e-sign) |
+| DECLINED | DenialMfe (adverse action information) |
+| DOCUMENTS_REQUIRED | DocumentUploadMfe (dynamic upload slots per requirement) |
+| OFFER_ACCEPTED / FUNDING_PENDING / FUNDED / COMPLETED | ConfirmationMfe |
 
 ---
 
-# 11. State Persistence
+# 10. Concurrency Control
 
-Application table:
-
-```
-application_id
-
-current_state
-
-previous_state
-
-state_changed_time
-
-state_reason
-
-updated_by
-
-version
-```
+Optimistic locking is used via a `version` column on the `application` table. Conflicting state updates are rejected and retried by the caller.
 
 ---
 
-# 12. Concurrency Control
+# 11. Related Documents
 
-The system shall prevent conflicting updates.
-
-Approach:
-
-Optimistic locking
-
-Version column
-
-Example:
-
-```
-version = 5
-
-Update allowed only if version = 5
-```
-
----
-
-# 13. Recovery Rules
-
-If external service fails:
-
-Application remains in current state.
-
-Example:
-
-Credit service unavailable:
-
-```
-PROCESSING
-
-reason:
-
-CREDIT_PENDING
-```
-
-Retry occurs asynchronously.
-
----
-
-# 14. Timeout Rules
-
-Examples:
-
-Identity verification timeout:
-
-Move to:
-
-IDENTITY_REVIEW_PENDING
-
-Decision timeout:
-
-Move to:
-
-DECISION_PENDING
-
-Funding timeout:
-
-Move to:
-
-FUNDING_PENDING
-
----
-
-# 15. Audit Requirements
-
-Every state change must capture:
-
-Application ID
-
-Previous State
-
-New State
-
-Timestamp
-
-Actor
-
-Reason
-
-Correlation ID
-
----
-
-# 16. Related Specifications
-
-000-domain-boundaries-and-context-map.md
-
-001-acquisition-business-capabilities.md
-
-002-invitation-to-apply-spec.md
-
-003-application-spec.md
-
-004-identity-verification-orchestration-spec.md
-
-005-fraud-verification-orchestration-spec.md
-
-006-credit-evaluation-orchestration-spec.md
-
-007-decision-orchestration-spec.md
+| Document | Location |
+|----------|----------|
+| Architecture Overview | `docs/architecture/000-architecture-overview.md` |
+| Functional Flow | `docs/flows/01-functional-flow.md` |
+| Component Interaction Flows | `docs/flows/02-component-interaction-flows.md` |
+| Scenario Flows | `docs/flows/03-scenario-flows.md` |
+| Post-Decision OpenSpec | `openspec/changes/post-decision-flow/` |

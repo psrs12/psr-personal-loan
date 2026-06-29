@@ -1,13 +1,9 @@
-# architecture/000-architecture-overview.md
-
 # Personal Loan Acquisition Platform
 
 ## Architecture Overview
 
-Version: 1.0
-
-Status: Draft
-
+Version: 2.0
+Status: Current
 Owner: Enterprise Architecture
 
 ---
@@ -16,577 +12,271 @@ Owner: Enterprise Architecture
 
 This document defines the high-level architecture of the Personal Loan Acquisition Platform.
 
-The platform enables digital personal loan acquisition by managing the customer application journey and orchestrating enterprise capabilities required for loan processing.
+The platform enables digital personal loan acquisition by managing the end-to-end customer application journey and orchestrating enterprise capabilities required for loan processing.
 
 The platform provides:
 
-* Customer application experience
-* Application lifecycle management
-* Workflow orchestration
-* Enterprise service integration
-* Application tracking
-* Audit capability
+- Invitation-to-Apply (ITA) customer entry flow
+- Application lifecycle management
+- Identity, fraud, and credit orchestration
+- Pricing and offer presentation
+- Offer acceptance with e-signature
+- Document collection workflow
+- Underwriting state management
+- Post-decision applicant self-service portal
+- Application event timeline for agent support
+- Audit capability
 
 ---
 
 # 2. Architecture Vision
 
-The Personal Loan Acquisition Platform follows a domain-driven, cloud-native, microservice-based architecture.
+The Personal Loan Acquisition Platform follows a domain-driven, cloud-native microservice architecture built on:
 
-The architecture emphasizes:
-
-* Clear business ownership boundaries
-* Independent service deployment
-* API-first integration
-* Event-driven communication
-* Enterprise capability reuse
-* Security by design
-* Observability by default
+- Domain-Driven Design (DDD) with bounded contexts
+- Hexagonal Architecture (ports and adapters) within each service
+- Event-Driven Architecture (EDA) using Apache Kafka for choreography
+- API-First development with REST contracts
+- Micro-frontend architecture for the applicant-facing UI shell
 
 ---
 
 # 3. Architecture Principles
 
-## AP-001 Domain Ownership
-
-Each business capability belongs to a clearly defined bounded context.
+| ID | Principle | Statement |
+|----|-----------|-----------|
+| AP-001 | Domain Ownership | Each business capability belongs to a clearly defined bounded context with a single owning service |
+| AP-002 | Enterprise Capability Reuse | Enterprise platforms (Offer, Credit, Fraud, Decision, Identity, Funding) are integrated, never duplicated |
+| AP-003 | API First | All capabilities are exposed through versioned, contract-first REST APIs |
+| AP-004 | Event-Driven Integration | Asynchronous Kafka events are used for workflow choreography wherever immediate response is not required |
+| AP-005 | Database Ownership | Each service owns its schema. No cross-service database access is permitted |
+| AP-006 | Security First | Authentication, authorization, PII protection, and audit are mandatory at every layer |
+| AP-007 | Cloud Native | Services are containerised, horizontally scalable, and continuously deliverable |
+| AP-008 | Anti-Corruption Layer | Integration with enterprise systems uses ACL adapters to preserve domain model integrity |
 
 ---
 
-## AP-002 Enterprise Capability Reuse
+# 4. System Context
 
-Existing enterprise platforms shall be consumed instead of recreated.
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        External Actors                          │
+│                                                                 │
+│  Applicant (Web/Mobile)   Call Centre Agent   Partner Channel   │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               Personal Loan Acquisition Platform                │
+│                                                                 │
+│  application-management-ui (Micro-Frontend Shell)               │
+│  ├── Applicant Portal (Login, Status, Post-Decision MFEs)       │
+│  └── ITA Flow (Invitation-to-Apply, Application Form)           │
+│                                                                 │
+│  Backend Services                                               │
+│  ├── invitation-service                                         │
+│  ├── application-management-service                             │
+│  ├── pricing-orchestration-service                              │
+│  ├── offer-acceptance-service                                   │
+│  └── document-service                                           │
+└────────────────────────────────┬────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Enterprise Capability Layer                   │
+│                                                                 │
+│  Offer Management Platform                                      │
+│  Credit Management Platform                                     │
+│  Fraud Management Platform                                      │
+│  Decision Engine Platform                                       │
+│  Identity Platform                                              │
+│  Funding Platform                                               │
+│  Notification Platform                                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+# 5. Service Landscape
+
+## 5.1 Acquisition Services (Platform-Owned)
+
+| Service | Port | Responsibility |
+|---------|------|----------------|
+| `invitation-service` | 8080 | Generates and validates invitation tokens (ITA flow) |
+| `application-management-service` | 8081 | Application lifecycle, state machine, applicant login, event timeline |
+| `pricing-orchestration-service` | 8082 | Soft pull, pricing, offer retrieval, hard pull, final decision routing |
+| `offer-acceptance-service` | 8085 | Declarations management, e-signature capture, ESignCompleted event |
+| `document-service` | 8084 | Document requirement tracking, upload handling, virus scan lifecycle, completion detection |
+
+## 5.2 UI Layer
+
+| Component | Responsibility |
+|-----------|----------------|
+| `application-management-ui` | Micro-frontend shell. Owns ITA flow web components and the applicant self-service portal (login → state routing → post-decision MFEs) |
+
+## 5.3 Enterprise Platform Dependencies
+
+| Platform | Integration Pattern | Owned By |
+|----------|--------------------|-|
+| Offer Management | REST (synchronous) | Enterprise |
+| Credit / Soft Pull | REST via pricing-orchestration | Enterprise |
+| Fraud Platform | REST via pricing-orchestration | Enterprise |
+| Decision Engine | REST + Kafka events | Enterprise |
+| Identity Platform | REST (verification-service, planned) | Enterprise |
+| Funding Platform | REST (funding-request-service, planned) | Enterprise |
+
+---
+
+# 6. Application State Machine (Current)
+
+```
+CREATED → STARTED → IN_PROGRESS → SUBMITTED → PROCESSING
+                                                    │
+                              ┌─────────────────────┤
+                              │                     │
+                              ▼                     ▼
+                          DECLINED             APPROVED
+                         (terminal)                │
+                                                   ▼
+                                          DOCUMENTS_REQUIRED ──► UNDERWRITING
+                                                   │                   │
+                                          OFFER_ACCEPTED ◄─────────────┘
+                                                   │
+                                          FUNDING_PENDING
+                                                   │
+                                               FUNDED
+                                                   │
+                                            COMPLETED (terminal)
+```
+
+**State ownership:** `application-management-service` owns all state transitions.
+State changes are triggered by domain events consumed from Kafka (ESignCompleted, DocumentsCompleted) or by direct API calls from orchestration services.
+
+See `002-application-state-machine.md` for full transition table.
+
+---
+
+# 7. Event Architecture Summary
+
+The platform uses Apache Kafka as the event streaming backbone. Services choreograph workflow through domain events — no central orchestrator exists on the backend.
+
+## Key Topics
+
+| Topic | Producer | Consumers |
+|-------|----------|-----------|
+| `pricing-events` | pricing-orchestration-service | offer-acceptance-service, document-service |
+| `offer-acceptance-events` | offer-acceptance-service | application-management-service |
+| `document-events` | document-service | application-management-service |
+| `application-events` | application-management-service | notification-service (planned), audit-service |
+
+## Key Event Contracts
+
+| Event | Topic | Schema Location |
+|-------|-------|----------------|
+| `FinalDecisionApproved` | pricing-events | Inline JSON map |
+| `FinalDecisionDocumentsRequired` | pricing-events | `docs/contracts/decision-engine-events/v1/documents-required.json` |
+| `ESignCompleted` | offer-acceptance-events | Domain record |
+| `DocumentsCompleted` | document-events | Domain record |
+
+---
+
+# 8. Integration Patterns
+
+## 8.1 Synchronous (REST)
+
+Used for: request/response operations, real-time queries, state updates.
 
 Examples:
+- Applicant login (`POST /applications/login`)
+- Document upload (`POST /applications/{id}/documents/upload`)
+- E-sign submission (`POST /applications/{id}/esign`)
+- Status update from orchestration services to application-management-service
 
-Offer Management
+## 8.2 Asynchronous (Kafka)
 
-Credit Management
+Used for: workflow progression, state transitions, cross-service notification.
 
-Fraud Management
+Pattern: Choreography — each service reacts to events from other services without being called directly.
 
-Decisioning
+## 8.3 Anti-Corruption Layer (ACL)
 
-Identity
+Used when integrating with enterprise systems that use different naming or domain models.
 
-Funding
-
----
-
-## AP-003 API First
-
-All external and internal capabilities are exposed through well-defined APIs.
+Example: `DecisionEngineDocumentCodeMapper` in document-service translates Decision Engine codes (e.g. `BANK_STMT_3M`) into the platform's `DocumentType` domain model.
 
 ---
 
-## AP-004 Event Driven Integration
+# 9. UI Architecture
 
-Asynchronous business events shall be used where immediate response is not required.
-
----
-
-## AP-005 Database Ownership
-
-Each service owns its data.
-
-No direct database access between services.
-
----
-
-## AP-006 Security First
-
-Authentication, authorization, encryption, auditing, and compliance are mandatory.
-
----
-
-## AP-007 Cloud Native
-
-Services are designed for:
-
-* Container deployment
-* Horizontal scaling
-* Automated recovery
-* Continuous delivery
-
----
-
-# 4. Logical Architecture
-
-High-level view:
+The `application-management-ui` is a Vite/React application that serves as a micro-frontend shell.
 
 ```
-+------------------------------------------------+
-|                Client Channels                 |
-|                                                |
-| Web Application                                |
-| Mobile Application                             |
-| Partner Channels                               |
-+----------------------+-------------------------+
-                       |
-                       v
-
-+------------------------------------------------+
-|              API Gateway Layer                 |
-+------------------------------------------------+
-
-                       |
-                       v
-
-+------------------------------------------------+
-|          Personal Loan Acquisition             |
-|             Application Layer                  |
-+------------------------------------------------+
-
- |          |            |           |
- v          v            v           v
-
-Application  Workflow  Integration  Audit
-Services     Engine    Services     Services
-
-
-                       |
-                       v
-
-+------------------------------------------------+
-|          Enterprise Capability Layer           |
-+------------------------------------------------+
-
-Offer Management
-
-Enterprise Fraud
-
-Enterprise Credit
-
-Enterprise Decision
-
-Identity Platform
-
-Document Platform
-
-Notification Platform
-
-Funding Platform
-
-Core Loan Platform
+application-management-ui
+├── ITA Flow (Web Components)
+│   ├── ita-traditional-form    (standalone web component)
+│   └── ita-progressive-form    (standalone web component)
+│
+└── Applicant Self-Service Portal
+    ├── ApplicantLoginPage       (applicationId + last4SSN + DOB)
+    ├── ApplicantShell           (3-second status poll → MFE router)
+    ├── OfferAcceptanceMfe       (declarations + e-sign)
+    ├── DocumentUploadMfe        (dynamic requirement slots + file upload)
+    ├── DenialMfe                (adverse action information)
+    └── ConfirmationMfe          (post-sign / funded confirmation)
 ```
 
----
-
-# 5. Application Architecture Layers
-
-## Presentation Layer
-
-Responsibilities:
-
-* Customer UI
-* Application forms
-* Application status views
-* Customer interactions
-
-Examples:
-
-Web UI
-
-Mobile UI
+The shell polls `GET /applications/{id}` every 3 seconds and routes to the appropriate MFE based on `applicationStatus`. Session token from login is forwarded as `Authorization: Bearer <token>` on all authenticated calls.
 
 ---
 
-## API Layer
+# 10. Security Architecture Summary
 
-Responsibilities:
-
-* API exposure
-* Authentication enforcement
-* Request validation
-* Routing
-
-Components:
-
-API Gateway
-
-Backend For Frontend (Optional)
+| Concern | Mechanism |
+|---------|-----------|
+| Applicant authentication | `POST /applications/login` → JJWT session token (30-minute expiry) |
+| Verification | `VerificationPort` (stub: SSN last-4 + DOB match; production: verification-service) |
+| API authorization | JWT Bearer token on all post-login endpoints |
+| PII protection | SSN stored as token, never logged in plaintext |
+| Service-to-service | Internal REST (mTLS planned for production) |
+| Secrets | Environment variables / secrets manager |
 
 ---
 
-## Application Service Layer
+# 11. Observability
 
-Responsibilities:
+All services emit:
 
-* Business workflows
-* Application lifecycle
-* State transitions
-* Orchestration
-
-Services:
-
-application-service
-
-invitation-service
-
-offer-acceptance-service
-
-underwriting-service
+- Structured logs with `applicationId`, `correlationId`, service name, timestamp
+- Spring Boot Actuator health and metrics endpoints
+- Distributed trace headers (planned: OpenTelemetry)
 
 ---
 
-## Integration Layer
+# 12. Deployment Architecture
 
-Responsibilities:
-
-* Enterprise API communication
-* Message publishing
-* Message consumption
-* Transformation
-
-Services:
-
-identity-orchestration-service
-
-fraud-orchestration-service
-
-credit-orchestration-service
-
-decision-orchestration-service
+| Concern | Approach |
+|---------|----------|
+| Runtime | Spring Boot 3.3.6, Java 21 |
+| Containerisation | Docker (one container per service) |
+| Orchestration | Kubernetes |
+| Messaging | Apache Kafka |
+| Persistence | PostgreSQL (one schema per service) |
+| Schema migration | Flyway |
+| UI build | Vite + React + TypeScript + Tailwind CSS |
 
 ---
 
-## Data Layer
-
-Responsibilities:
-
-* Service-owned persistence
-* Audit history
-* Application state
-
-Pattern:
-
-Database per service
-
----
-
-# 6. Domain Architecture
-
-The Acquisition Platform owns:
-
-```
-Application Management
-
-Customer Journey
-
-Application Workflow
-
-Invitation Processing
-
-Offer Acceptance
-
-Document Collection
-
-Underwriting Workflow
-
-Funding Request
-
-Application Tracking
-
-Acquisition Audit
-```
-
-Enterprise platforms own:
-
-```
-Offer Management
-
-Credit Management
-
-Fraud Management
-
-Decisioning
-
-Identity Verification
-
-Funding Execution
-
-Loan Servicing
-```
-
----
-
-# 7. Service Architecture
-
-Microservices:
-
-```
-application-service
-
-
-
-offer-acceptance-service
-
-identity-orchestration-service
-
-fraud-orchestration-service
-
-credit-orchestration-service
-
-decision-orchestration-service
-
-document-service
-
-underwriting-service
-
-bank-verification-service
-
-funding-request-service
-
-notification-service
-```
-
----
-
-# 8. Communication Patterns
-
-## Synchronous Communication
-
-Used for:
-
-* Request/response operations
-* Real-time validation
-
-Examples:
-
-Application API
-
-Offer retrieval
-
-Verification request
-
-Protocol:
-
-REST / HTTPS
-
----
-
-## Asynchronous Communication
-
-Used for:
-
-* Long running processes
-* Workflow progression
-* Notifications
-
-Examples:
-
-ApplicationSubmitted
-
-DecisionCompleted
-
-FundingCompleted
-
-Technology:
-
-Event streaming platform
-
----
-
-# 9. Integration Architecture
-
-External integrations:
-
-```
-Acquisition Platform
-
-       |
-       |
-       +---- Offer Management
-
-       +---- Fraud Platform
-
-       +---- Credit Management
-
-       +---- Decision Platform
-
-       +---- Identity Platform
-
-       +---- Document Platform
-
-       +---- Funding Platform
-
-       +---- Notification Platform
-```
-
----
-
-# 10. Data Architecture Principles
-
-## Ownership
-
-Application Service owns:
-
-Application
-
-Application Status
-
-Application History
-
-Workflow State
-
-External systems own:
-
-Enterprise master data
-
----
-
-## Data Security
-
-Sensitive data requires:
-
-Encryption at rest
-
-Encryption in transit
-
-Access control
-
-Audit logging
-
----
-
-# 11. Security Architecture Overview
-
-Security controls:
-
-Authentication
-
-Authorization
-
-API security
-
-Service identity
-
-Secrets management
-
-Audit logging
-
-Standards:
-
-OAuth 2.0
-
-OpenID Connect
-
-mTLS
-
-RBAC
-
----
-
-# 12. Observability Architecture
-
-All services provide:
-
-Logs
-
-Metrics
-
-Distributed tracing
-
-Health checks
-
-Required fields:
-
-Correlation ID
-
-Application ID
-
-Transaction ID
-
-Service Name
-
-Timestamp
-
----
-
-# 13. Deployment Architecture
-
-Target platform:
-
-Containerized microservices
-
-Deployment:
-
-Kubernetes
-
-CI/CD enabled
-
-Environment separation:
-
-DEV
-
-QA
-
-UAT
-
-PRODUCTION
-
----
-
-# 14. Non Functional Goals
-
-Availability:
-
-99.95%
-
-Scalability:
-
-Horizontal scaling
-
-Performance:
-
-API response < 2 seconds
-
-Reliability:
-
-Retry and resilience patterns
-
-Security:
-
-Enterprise compliance
-
----
-
-# 15. Future Evolution
-
-Future extensions:
-
-AI assisted underwriting
-
-ML based journey optimization
-
-Real-time decision optimization
-
-Advanced analytics
-
-Customer personalization
-
----
-
-# Related Documents
-
-000-domain-boundaries-and-context-map.md
-
-001-acquisition-business-capabilities.md
-
-application-state-machine.md
-
-001-logical-architecture.md
-
-002-microservice-boundaries.md
-
-003-data-architecture.md
-
-004-api-standards.md
-
-005-event-driven-architecture.md
-
-006-integration-patterns.md
-
-007-security-architecture.md
-
-008-observability-architecture.md
+# 13. Related Documents
+
+| Document | Location |
+|----------|----------|
+| Domain Boundaries and Context Map | `docs/architecture/000-domain-boundaries-and-context-map.md` |
+| Application State Machine | `docs/architecture/002-application-state-machine.md` |
+| Microservice Boundaries | `docs/architecture/002-microservice-boundaries.md` |
+| Event-Driven Architecture | `docs/architecture/005-event-driven-architecture.md` |
+| Security Architecture | `docs/architecture/007-security-architecture.md` |
+| Functional Flow | `docs/flows/01-functional-flow.md` |
+| Component Interaction Flows | `docs/flows/02-component-interaction-flows.md` |
+| Scenario Flows | `docs/flows/03-scenario-flows.md` |
+| OpenSpec — Post-Decision Flow | `openspec/changes/post-decision-flow/` |

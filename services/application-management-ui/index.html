@@ -126,12 +126,49 @@
       }
 
       // Mock: POST /applications
-      if (url.includes('/applications') && init?.method === 'POST') {
+      if (url.includes('/applications') && !url.includes('/pricing-offers') && !url.includes('/offer-selection') && !url.includes('/consent') && init?.method === 'POST') {
         await new Promise(r => setTimeout(r, 1500))
         return new Response(
-          JSON.stringify({ applicationId: 'APP-' + Math.random().toString(36).slice(2,8).toUpperCase() }),
+          JSON.stringify({ applicationId: '00000000-0000-0000-0000-000000000001' }),
           { status: 201, headers: { 'Content-Type': 'application/json' } }
         )
+      }
+
+      // Mock: GET /applications/:id/pricing-offers
+      if (url.includes('/pricing-offers') && (!init?.method || init.method === 'GET')) {
+        await new Promise(r => setTimeout(r, 900))
+        return new Response(JSON.stringify([
+          {
+            pricingOfferId: 'offer-001',
+            approvedAmount: 15000, interestRate: 0.068, apr: 0.0712,
+            termMonths: 36, monthlyRepayment: 463.45, totalRepayable: 16684.20,
+            offerExpiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            pricingOfferId: 'offer-002',
+            approvedAmount: 15000, interestRate: 0.082, apr: 0.0856,
+            termMonths: 60, monthlyRepayment: 306.72, totalRepayable: 18403.20,
+            offerExpiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          },
+          {
+            pricingOfferId: 'offer-003',
+            approvedAmount: 12000, interestRate: 0.059, apr: 0.0618,
+            termMonths: 36, monthlyRepayment: 365.30, totalRepayable: 13150.80,
+            offerExpiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          },
+        ]), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+
+      // Mock: POST /applications/:id/offer-selection
+      if (url.includes('/offer-selection')) {
+        await new Promise(r => setTimeout(r, 400))
+        return new Response(null, { status: 200 })
+      }
+
+      // Mock: POST /applications/:id/consent
+      if (url.includes('/consent')) {
+        await new Promise(r => setTimeout(r, 400))
+        return new Response(null, { status: 200 })
       }
 
       return _fetch(input, init)
