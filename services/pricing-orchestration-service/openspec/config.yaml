@@ -1,0 +1,23 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+context: |
+  Service: pricing-orchestration-service
+  Tech stack: Java, Spring Boot, Kafka, PostgreSQL
+  Architecture: Hexagonal Architecture, Domain Driven Design, Event Driven Architecture
+  Domain: Personal Loan Acquisition Platform — Pricing Orchestration capability
+  Responsibilities:
+    - Orchestrate soft pull via Credit Management Platform
+    - Assemble and submit pricing request to Decision Platform (Pricing Engine)
+    - Persist and manage pricing offers
+    - Handle offer selection and consent capture
+    - Orchestrate hard pull via Credit Management Platform
+    - Route final decision outcomes (approved / declined / referred)
+  Conventions:
+    - Constructor injection
+    - Immutable value objects
+    - Domain events for all state changes
+    - No business logic in controllers
+    - No direct database access from domain layer

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pricing Offers UI — Dev Harness</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      gap: 1rem;
+    }
+    .shell-header {
+      width: 100%;
+      max-width: 600px;
+      background: #1e293b;
+      border-radius: 0.75rem;
+      padding: 12px 20px;
+      color: #f1f5f9;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .shell-header small {
+      display: block;
+      color: #64748b;
+      font-size: 11px;
+      font-weight: 400;
+      margin-top: 2px;
+    }
+    .card {
+      width: 100%;
+      max-width: 600px;
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    }
+    .event-log {
+      width: 100%;
+      max-width: 600px;
+      background: #0f172a;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      font-family: monospace;
+      font-size: 11px;
+      color: #94a3b8;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .event-log p { margin: 2px 0; }
+    .event-log .ok  { color: #4ade80; }
+    .event-log .err { color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <div class="shell-header">
+    Pricing Offers UI — Dev Harness
+    <small>Web component: &lt;pricing-offer-selector&gt; · Mock API intercepts fetch() below</small>
+  </div>
+
+  <div class="card">
+    <pricing-offer-selector
+      api-base-url="http://localhost:8080/api/v1"
+      application-id="00000000-0000-0000-0000-000000000001"
+      applicant-reference="APPLICANT-REF-001"
+    ></pricing-offer-selector>
+  </div>
+
+  <div class="event-log" id="log">
+    <p style="color:#475569">// Custom events emitted by the web component appear here</p>
+  </div>
+
+  <script type="module" src="/src/main.tsx"></script>
+
+  <script>
+    // ── Mock API ──────────────────────────────────────────────────────────────
+    const MOCK_OFFERS = [
+      {
+        pricingOfferId: 'offer-001',
+        approvedAmount: 15000,
+        interestRate: 0.068,
+        apr: 0.0712,
+        termMonths: 36,
+        monthlyRepayment: 463.45,
+        totalRepayable: 16684.20,
+        offerExpiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        pricingOfferId: 'offer-002',
+        approvedAmount: 15000,
+        interestRate: 0.082,
+        apr: 0.0856,
+        termMonths: 60,
+        monthlyRepayment: 306.72,
+        totalRepayable: 18403.20,
+        offerExpiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        pricingOfferId: 'offer-003',
+        approvedAmount: 12000,
+        interestRate: 0.059,
+        apr: 0.0618,
+        termMonths: 36,
+        monthlyRepayment: 365.30,
+        totalRepayable: 13150.80,
+        offerExpiryDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ]
+
+    const _fetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : input.toString()
+      await new Promise(r => setTimeout(r, 700))
+
+      if (url.includes('/pricing-offers') && !init?.method) {
+        return new Response(JSON.stringify(MOCK_OFFERS), {
+          status: 200, headers: { 'Content-Type': 'application/json' }
+        })
+      }
+      if (url.includes('/offer-selection')) {
+        return new Response(null, { status: 200 })
+      }
+      if (url.includes('/consent')) {
+        return new Response(null, { status: 200 })
+      }
+      return _fetch(input, init)
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    function log(msg, type = '') {
+      const el = document.getElementById('log')
+      const p = document.createElement('p')
+      p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`
+      if (type) p.className = type
+      el.appendChild(p)
+      el.scrollTop = el.scrollHeight
+    }
+
+    document.addEventListener('offer-confirmed', e => {
+      log(`offer-confirmed → offerId: ${e.detail.offerId}`, 'ok')
+    })
+    document.addEventListener('offer-error', e => {
+      log(`offer-error → ${e.detail.error}`, 'err')
+    })
+  </script>
+</body>
+</html>

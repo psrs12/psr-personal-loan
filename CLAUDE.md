@@ -6,13 +6,35 @@
 
 This repository contains a production-grade Personal Loan Acquisition Platform.
 
-The platform supports the Personal Loan application lifecycle using:
+The platform supports the full Personal Loan application lifecycle using:
 
 * Domain Driven Design
-* Modular Architecture
-* Hexagonal Architecture
-* Event Driven Architecture
+* Hexagonal Architecture (ports and adapters)
+* Event Driven Architecture (Apache Kafka — choreography)
 * API First Development
+* Micro-Frontend Architecture (applicant self-service portal)
+
+---
+
+# Services
+
+**Backend**
+
+| Service | Port | Responsibility |
+|---------|------|----------------|
+| `invitation-service` | 8080 | Invitation token generation and validation |
+| `application-management-service` | 8081 | Application lifecycle, state machine, applicant login, event timeline |
+| `pricing-orchestration-service` | 8082 | Soft pull, offer pricing, hard pull, final decision routing |
+| `offer-acceptance-service` | 8085 | Declarations, e-signature, ESignCompleted event |
+| `document-service` | 8084 | Document requirements, upload, virus scan lifecycle, completion detection |
+
+**Frontend**
+
+| UI | Responsibility |
+|----|----------------|
+| `application-management-ui` | Micro-frontend shell — ITA flow web components + applicant self-service portal (login, state routing, embeds post-decision web components) |
+| `pricing-offers-ui` | Standalone `<pricing-offer-selector>` web component — offer list, offer selection, hard pull consent, fires `offer-confirmed` custom event |
+| `document-management-ui` | Standalone `<document-upload-manager>` web component — document requirements list, per-requirement file upload, progress bar, status tracking |
 
 ---
 
@@ -32,129 +54,38 @@ Location:
 docs/architecture/
 ```
 
-Reference documents:
+| File | Purpose |
+|------|---------|
+| `000-architecture-overview.md` | System context, service landscape, event topology, security summary |
+| `000-domain-boundaries-and-context-map.md` | Bounded contexts, ownership boundaries, enterprise platform dependencies |
+| `001-acquisition-business-capabilities.md` | Business capability inventory |
+| `001-logical-architecture.md` | Logical layering and component relationships |
+| `002-application-state-machine.md` | **All application states, valid transitions, event ownership** — read before touching any state logic |
+| `002-microservice-boundaries.md` | Service decomposition strategy and data ownership rules |
+| `003-data-architecture.md` | Persistence strategy, data ownership |
+| `004-api-standards.md` | REST conventions, versioning, error handling |
+| `005-event-driven-architecture.md` | Kafka patterns, event ownership, consumer rules |
+| `006-integration-patterns.md` | Adapter patterns, ACL pattern, resilience |
+| `007-security-architecture.md` | Authentication, authorisation, PII handling |
+| `008-observability-architecture.md` | Logging, metrics, tracing, required fields |
+| `009-deployment-architecture.md` | Containerisation, Kubernetes, environment model |
+| `010-non-functional-requirements.md` | Performance, availability, scalability targets |
 
-1. Architecture Overview
+---
 
-```
-docs/architecture/01-architecture-overview.md
-```
+# Flow References
 
-Defines:
-
-* System context
-* Major components
-* Boundaries
-* Architecture principles
-
-2. Domain Architecture
-
-```
-docs/architecture/02-domain-architecture.md
-```
-
-Defines:
-
-* Bounded contexts
-* Domain ownership
-* Capability boundaries
-
-3. Application Management Architecture
+Location:
 
 ```
-docs/architecture/03-application-management.md
+docs/flows/
 ```
 
-Defines:
-
-* Application Management capability
-* Module responsibilities
-* Dependencies
-
-4. Integration Architecture
-
-```
-docs/architecture/04-integration-architecture.md
-```
-
-Defines:
-
-* External systems
-* API integrations
-* Adapter patterns
-
-5. Data Architecture
-
-```
-docs/architecture/05-data-architecture.md
-```
-
-Defines:
-
-* Persistence strategy
-* Data ownership
-* Storage patterns
-
-6. Security Architecture
-
-```
-docs/architecture/06-security-architecture.md
-```
-
-Defines:
-
-* Authentication
-* Authorization
-* PII handling
-
-7. Event Architecture
-
-```
-docs/architecture/07-event-architecture.md
-```
-
-Defines:
-
-* Domain events
-* Messaging patterns
-* Kafka usage
-
-8. Deployment Architecture
-
-```
-docs/architecture/08-deployment-architecture.md
-```
-
-Defines:
-
-* Runtime environment
-* Containerization
-* Deployment model
-
-9. Observability Architecture
-
-```
-docs/architecture/09-observability-architecture.md
-```
-
-Defines:
-
-* Logging
-* Metrics
-* Tracing
-
-10. Non Functional Requirements
-
-```
-docs/architecture/10-nfr.md
-```
-
-Defines:
-
-* Performance
-* Availability
-* Scalability
-* Reliability
+| File | Purpose |
+|------|---------|
+| `01-functional-flow.md` | End-to-end business journey — all phases from invitation to funding. Read for business context before implementing any phase. |
+| `02-component-interaction-flows.md` | Sequence diagrams for all major service interactions and event flows |
+| `03-scenario-flows.md` | Step-by-step scenario walkthroughs: approved, documents required, declined, login, virus rejection, idempotency |
 
 ---
 
@@ -166,82 +97,27 @@ Location:
 docs/design/
 ```
 
-Reference documents:
+| File | Purpose |
+|------|---------|
+| `001-service-design-guidelines.md` | Hexagonal architecture patterns within each service |
+| `002-database-design-guidelines.md` | Schema ownership, migration strategy |
+| `005-testing-strategy.md` | Unit, integration, contract testing approach |
 
-1. Domain Design
+---
 
-```
-docs/design/01-domain-design.md
-```
+# Standards References
 
-Contains:
-
-* Aggregates
-* Entities
-* Value Objects
-* Domain rules
-
-2. Application Design
+Location:
 
 ```
-docs/design/02-application-design.md
+docs/standards/
 ```
 
-Contains:
-
-* Use cases
-* Application services
-* Workflow orchestration
-
-3. API Design
-
-```
-docs/design/03-api-design.md
-```
-
-Contains:
-
-* REST standards
-* API contracts
-* Error handling
-
-4. Database Design
-
-```
-docs/design/04-database-design.md
-```
-
-Contains:
-
-* Schema
-* Tables
-* Relationships
-* Migration strategy
-
-5. Integration Design
-
-```
-docs/design/05-integration-design.md
-```
-
-Contains:
-
-* External clients
-* Resilience
-* Timeout
-* Retry patterns
-
-6. Testing Design
-
-```
-docs/design/06-testing-design.md
-```
-
-Contains:
-
-* Unit testing
-* Integration testing
-* Contract testing
+| File | Purpose |
+|------|---------|
+| `003-error-handling-standard.md` | ProblemDetail format, HTTP status codes, error codes |
+| `004-logging-standard.md` | Structured logging, required fields, PII rules |
+| `006-coding-standard.md` | Code conventions, layer rules |
 
 ---
 
@@ -253,31 +129,67 @@ Business capability specifications are stored under:
 openspec/
 ```
 
-Current capability:
+| Location | Status | Purpose |
+|----------|--------|---------|
+| `openspec/application-management/` | Active | Core application management capability spec |
+| `openspec/changes/post-decision-flow/` | Active | Post-decision flows: offer acceptance, document collection, applicant login |
+
+Each change directory contains:
 
 ```
-openspec/application-management/
-```
-
-Documents:
-
-```
-01-capability.md
-02-domain-model.md
-03-invitation-processing.md
-04-sequence-diagrams.md
-05-api-contracts.md
-06-persistence-model.md
-07-acceptance-tests.md
+proposal.md       — what and why
+design.md         — how
+tasks.md          — implementation steps with completion tracking
+specs/            — per-capability detailed specs
 ```
 
 OpenSpec defines:
 
-* Scope
-* Business rules
-* Domain behavior
+* Scope and business rules
+* Domain behaviour and acceptance criteria
 * API contracts
-* Acceptance criteria
+* Event contracts
+
+---
+
+# Key Domain Rules
+
+## Application State Machine
+
+`application-management-service` is the **sole owner** of application state. No other service may directly write application status except through:
+
+1. `PATCH /applications/{id}/status` REST call
+2. Kafka event consumption by registered consumers
+
+Read `docs/architecture/002-application-state-machine.md` before any state-related work.
+
+Current states: `CREATED → STARTED → IN_PROGRESS → SUBMITTED → PROCESSING → APPROVED | DECLINED | REFERRED | DOCUMENTS_REQUIRED → UNDERWRITING → OFFER_ACCEPTED → FUNDING_PENDING → FUNDED → COMPLETED`
+
+Terminal states: `DECLINED`, `CANCELLED`, `EXPIRED`, `COMPLETED`
+
+## Event Contract
+
+The `FinalDecisionDocumentsRequired` event contract between the Decision Engine and `document-service` is versioned at:
+
+```
+docs/contracts/decision-engine-events/v1/documents-required.json
+```
+
+Do not change document type codes without updating this contract.
+
+## Anti-Corruption Layer
+
+`document-service` owns the ACL mapping from Decision Engine document type codes to platform `DocumentType` domain values. The mapping lives in `DecisionEngineDocumentCodeMapper`. Do not add Decision Engine vocabulary to any other service.
+
+## ITA Prefill Rules
+
+In the ITA flow, **name and address are prefilled from the invitation and are read-only** — the applicant cannot edit them. Only non-identity fields (employment, income, financial obligations) are editable.
+
+## Applicant Login
+
+Applicant self-service login is `POST /applications/login` (public endpoint — no auth header). Returns a JJWT session token (30-minute expiry). Login is rejected for terminal application states.
+
+Verification is currently handled by `StubVerificationAdapter` (feature flag: `verification.stub.enabled=true`). Production implementation will replace this via `VerificationPort`.
 
 ---
 
@@ -287,31 +199,26 @@ OpenSpec defines:
 
 Before implementation:
 
-1. Read relevant OpenSpec.
-2. Read related architecture documents.
-3. Read related design documents.
-4. Confirm ownership boundary.
+1. Read the relevant OpenSpec (`openspec/` directory).
+2. Read related architecture documents (`docs/architecture/`).
+3. Read relevant flow documents (`docs/flows/`).
+4. Confirm ownership boundary — do not implement logic that belongs to another service.
+5. Do not expand scope beyond the task.
 
-Do not expand scope.
+## Architecture Rules
 
----
-
-# Architecture Rules
-
-Follow existing architecture.
-
-Do not:
+Follow existing architecture. Do not:
 
 * Create unnecessary microservices
 * Create new bounded contexts without approval
-* Duplicate external capabilities
-* Move ownership across domains
+* Duplicate enterprise platform capabilities (credit, fraud, identity, decisioning, funding)
+* Move data ownership across service boundaries
 
 Prefer:
 
-* Modular design
-* Clear boundaries
-* Reusable components inside the domain
+* Modular design within the existing service landscape
+* Clear port/adapter boundaries per hexagonal architecture
+* ACL adapters when integrating with enterprise systems
 
 ---
 
@@ -319,18 +226,17 @@ Prefer:
 
 Generate:
 
-* Clean code
-* Constructor injection
-* Immutable objects where possible
-* Small focused classes
-* Domain-driven naming
+* Clean code with constructor injection
+* Immutable objects where possible (records for value objects, DTOs)
+* Small, focused classes — one responsibility per class
+* Domain-driven naming aligned to the ubiquitous language
 
 Avoid:
 
 * God classes
 * Static utilities
-* Tight coupling
-* Business logic in controllers
+* Tight coupling between layers
+* Business logic in controllers or infrastructure classes
 
 ---
 
@@ -338,61 +244,45 @@ Avoid:
 
 ## Domain Layer
 
-Contains:
+Package: `domain/`
 
-* Aggregates
-* Entities
-* Value Objects
-* Domain Services
+Contains: Aggregates, Entities, Value Objects, Domain Services, Port interfaces, Domain Events, Domain Exceptions
 
-Must not contain:
-
-* REST
-* Database
-* External APIs
-
----
+Must not contain: REST, database, Kafka, or any infrastructure concern.
 
 ## Application Layer
 
-Contains:
+Package: `application/`
 
-* Use cases
-* Workflow orchestration
-* Transaction boundaries
+Contains: Use cases (`@Service`), workflow orchestration, transaction boundaries (`@Transactional`)
 
----
+One use case class per business operation. Use cases call domain objects and port interfaces only.
 
 ## Infrastructure Layer
 
-Contains:
+Package: `infrastructure/`
 
-* Database adapters
-* External API clients
-* Messaging
+Contains: JPA entities and repositories, Kafka consumers and producers, REST client adapters, storage adapters
 
----
+Implements port interfaces defined in the domain layer.
 
 ## API Layer
 
-Contains:
+Package: `api/`
 
-* Controllers
-* Request/Response models
-* Validation
+Contains: Controllers (`@RestController`), request/response records, `@Valid` validation, `@RestControllerAdvice` exception handlers
 
-Controllers remain thin.
+Controllers are thin — they delegate immediately to use cases. No business logic in controllers.
 
 ---
 
 # Integration Rules
 
-External systems must use adapters.
+Enterprise systems (Decision Engine, Credit, Fraud, Identity, Offer, Funding platforms) must be accessed through port interfaces and infrastructure adapters.
 
-Never call external systems directly from:
+Never call external systems directly from controllers or domain objects.
 
-* Controllers
-* Domain objects
+Use ACL adapters when the external system's model differs from the platform domain model.
 
 ---
 
@@ -400,15 +290,17 @@ Never call external systems directly from:
 
 Every feature requires:
 
-* Unit tests
-* Integration tests
-* Contract tests
+* Unit tests — domain logic, use cases (Mockito mocks for ports)
+* Integration tests — full slice with Testcontainers (PostgreSQL + Kafka)
+* Acceptance tests — API-level scenarios validating acceptance criteria from OpenSpec
 
 Use:
 
 * JUnit 5
 * Mockito
 * Testcontainers
+* WireMock (for external REST dependencies)
+* `@SpringBootTest` + `MockMvc` for acceptance tests
 
 ---
 
@@ -416,13 +308,11 @@ Use:
 
 Assume production banking environment.
 
-Protect:
-
-* Customer information
-* PII
-* Financial data
-
-Never log sensitive information.
+* Never log SSN, full account numbers, or any PII
+* SSN is stored as a token — never in plaintext
+* All post-login endpoints require `Authorization: Bearer <token>` header
+* Session tokens expire after 30 minutes
+* `POST /applications/login` is the only public (unauthenticated) endpoint on application-management-service
 
 ---
 
@@ -440,14 +330,14 @@ Commit style:
 type: description
 ```
 
+Types: `feat`, `fix`, `test`, `docs`, `refactor`, `chore`
+
 Examples:
 
 ```
-feat: add invitation validation
-
-test: add invitation scenarios
-
-docs: update api contract
+feat: add FinalDecisionDocumentsRequired consumer
+test: add upload validation unit tests
+docs: update application state machine spec
 ```
 
 ---
@@ -456,12 +346,13 @@ docs: update api contract
 
 For every change:
 
-1. Review OpenSpec
-2. Review Architecture
-3. Review Design
-4. Propose implementation approach
-5. Generate code
-6. Generate tests
-7. Validate against acceptance criteria
+1. Read the relevant OpenSpec (`openspec/changes/<change>/`)
+2. Read related architecture and flow documents
+3. Confirm service ownership and layer placement
+4. Propose implementation approach if non-trivial
+5. Implement code following hexagonal layer rules
+6. Write unit tests and acceptance tests
+7. Update task checklist in `tasks.md`
+8. Validate against acceptance criteria in OpenSpec
 
-The objective is production-quality enterprise software.
+The objective is production-quality enterprise software that a senior engineer would be proud to ship.

@@ -1,0 +1,79 @@
+server:
+  port: 8085
+  servlet:
+    context-path: /api/v1/pricing-orchestration
+
+spring:
+  application:
+    name: pricing-orchestration-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/pricingorchestration}
+    username: ${DB_USERNAME:pricingorchestration}
+    password: ${DB_PASSWORD:pricingorchestration}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: pricing-orchestration-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.personalloan.*"
+        spring.json.use.type.headers: false
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+
+integration:
+  credit-management:
+    base-url: ${CREDIT_MANAGEMENT_URL:http://localhost:8086}
+    timeout-seconds: 5
+  decision-platform:
+    base-url: ${DECISION_PLATFORM_URL:http://localhost:8087}
+    timeout-seconds: 10
+
+kafka:
+  topics:
+    application-events: application-events
+    consent-events: consent-events
+    pricing-events: pricing-events
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      creditManagement:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 3
+      decisionPlatform:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      creditManagement:
+        max-attempts: 3
+        wait-duration: 1000ms
+      decisionPlatform:
+        max-attempts: 2
+        wait-duration: 500ms
+
+logging:
+  level:
+    com.personalloan: INFO
+    org.springframework.web: WARN
