@@ -1,0 +1,52 @@
+{
+    # Self-signed certificate mode — no domain or ACME required
+    # Browser will show a security warning; click "proceed" to continue
+    local_certs
+    auto_https off
+}
+
+# HTTPS on port 443 with self-signed certificate
+https://129.146.21.16 {
+
+    tls internal
+
+    header X-Content-Type-Options "nosniff"
+    header X-Frame-Options "DENY"
+    header Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Backend API services
+    handle /api/v1/application-management/* {
+        reverse_proxy application-management-service:8081
+    }
+
+    handle /api/v1/pricing-orchestration/* {
+        reverse_proxy pricing-orchestration-service:8082
+    }
+
+    handle /api/v1/offer-acceptance/* {
+        reverse_proxy offer-acceptance-service:8085
+    }
+
+    handle /api/v1/document/* {
+        reverse_proxy document-service:8084
+    }
+
+    # Web component static JS files
+    handle /pricing-offer-selector* {
+        reverse_proxy pricing-offers-ui:80
+    }
+
+    handle /document-upload-manager* {
+        reverse_proxy document-management-ui:80
+    }
+
+    # Shell SPA — catch-all
+    handle {
+        reverse_proxy application-management-ui:80
+    }
+}
+
+# Refuse plain HTTP — no redirect
+:80 {
+    respond "HTTPS required. Connect to https://129.146.21.16" 426
+}
