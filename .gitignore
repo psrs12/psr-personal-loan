@@ -31,3 +31,5 @@ target/
 
 .env
 application-local.ymldeploy/.env
+
+node_modules/
