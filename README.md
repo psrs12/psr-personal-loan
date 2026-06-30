@@ -35,6 +35,7 @@ The platform manages the complete customer journey from invitation through to lo
 | `pricing-orchestration-service` | 8082 | Soft pull, offer pricing, hard pull, final decision routing |
 | `offer-acceptance-service` | 8085 | Declarations, e-signature capture, ESignCompleted event |
 | `document-service` | 8084 | Document requirements, upload, virus scan, completion tracking |
+| `compliance-orchestration-service` | 8086 | Compliance gates: AML screening, FCRA consent audit, adverse action, TILA disclosure audit, pre-funding hold |
 
 ### Frontend
 
@@ -51,22 +52,29 @@ The platform manages the complete customer journey from invitation through to lo
 ```
 CREATED → STARTED → IN_PROGRESS → SUBMITTED → PROCESSING
                                                    │
-                          ┌────────────────────────┤
-                          │                        │
-                       DECLINED               APPROVED
-                      (terminal)                   │
-                                      ┌────────────┤
-                                      │            │
-                             DOCUMENTS_REQUIRED  (direct e-sign)
-                                      │            │
-                                 UNDERWRITING       │
-                                      │            │
-                                   APPROVED ◄───────┘
-                                      │
-                                OFFER_ACCEPTED
-                                      │
-                               FUNDING_PENDING → FUNDED → COMPLETED
+                          ┌──────────┬────────────┤
+                          │          │            │
+                       DECLINED   REFERRED    APPROVED
+                      (terminal)     │            │
+                                UNDERWRITING  DOCUMENTS_REQUIRED
+                                     │            │
+                                     │       UNDERWRITING
+                                     │            │
+                                     └────────────┤
+                                                  │
+                                            OFFER_ACCEPTED
+                                                  │
+                                         [COMPLIANCE_HOLD]  ← pre-funding AML gate
+                                                  │
+                                          FUNDING_PENDING → FUNDED → COMPLETED
 ```
+
+Compliance gates (owned by `compliance-orchestration-service`):
+- **Gate 1** AML pre-screening — after `SUBMITTED`, before soft pull
+- **Gate 2** FCRA consent audit — synchronous gate before hard pull
+- **Gate 3** Adverse action notice — on `DECLINED`
+- **Gate 4** TILA disclosure audit — on e-sign completion
+- **Gate 5** AML pre-funding re-check — before funding request; may place application in `COMPLIANCE_HOLD`
 
 ---
 
@@ -105,10 +113,23 @@ CREATED → STARTED → IN_PROGRESS → SUBMITTED → PROCESSING
 | [Coding Standard](docs/standards/006-coding-standard.md) | Code conventions, layer rules |
 
 ### Capability Specifications (OpenSpec)
+
+**Capability specs** — standalone per-capability specifications:
+
 | Capability | Location |
 |------------|----------|
-| Application Management | `openspec/application-management/` |
-| Post-Decision Flow (active change) | `openspec/changes/post-decision-flow/` |
+| Application Management | `openspec/application-management/spec.md` |
+| Pricing Orchestration | `openspec/pricing-orchestration/spec.md` |
+| Offer Acceptance | `openspec/offer-acceptance/spec.md` |
+| Document Collection | `openspec/document-collection/spec.md` |
+| Compliance Orchestration | `openspec/compliance-orchestration/spec.md` *(planned)* |
+
+**Active changes** — proposed changes with tasks and delta specs:
+
+| Change | Location | Status |
+|--------|----------|--------|
+| Post-Decision Flow | `openspec/changes/post-decision-flow/` | Active |
+| Compliance Orchestration | `openspec/changes/compliance-orchestration/` | Proposed |
 
 ---
 
