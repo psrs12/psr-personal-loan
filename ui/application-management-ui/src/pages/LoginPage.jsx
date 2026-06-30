@@ -83,6 +83,9 @@ export default function LoginPage() {
         <p style={{ marginTop: 20, fontSize: '0.85rem', color: '#7a8ea8', textAlign: 'center' }}>
           Your session is encrypted and expires after 30 minutes.
         </p>
+        <p style={{ marginTop: 12, fontSize: '0.88rem', textAlign: 'center' }}>
+          New applicant? <a href="/apply">Apply now</a>
+        </p>
       </div>
     </div>
   );
