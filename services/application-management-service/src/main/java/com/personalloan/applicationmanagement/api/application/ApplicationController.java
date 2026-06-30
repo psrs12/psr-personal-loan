@@ -8,6 +8,7 @@ import com.personalloan.applicationmanagement.application.application.GetApplica
 import com.personalloan.applicationmanagement.domain.application.Application;
 import com.personalloan.applicationmanagement.domain.application.ApplicationAuditRecord;
 import com.personalloan.applicationmanagement.domain.application.port.ApplicationRepository;
+import com.personalloan.applicationmanagement.domain.exception.ApplicationNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -72,6 +73,20 @@ public class ApplicationController {
                 application.getApplicationStatus().name(),
                 application.getApplicationSource().name(),
                 application.getCreatedTimestamp()
+        ));
+    }
+
+    @GetMapping("/{applicationId}/status")
+    public ResponseEntity<ApplicationStatusResponse> getStatus(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable UUID applicationId) {
+
+        Application application = applicationRepository.findByApplicationId(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
+
+        return ResponseEntity.ok(new ApplicationStatusResponse(
+                application.getApplicationId(),
+                application.getApplicationStatus().name()
         ));
     }
 

@@ -53,12 +53,12 @@ export default function ApplicantShell({
   const poll = useCallback(async () => {
     try {
       const res = await fetch(
-        `${appManagementApiBaseUrl}/applications/${session.applicationId}`,
+        `${appManagementApiBaseUrl}/applications/${session.applicationId}/status`,
         { headers: { Authorization: `Bearer ${session.sessionToken}` } }
       )
       if (res.ok) {
         const data = await res.json()
-        setStatus(data.status)
+        setStatus(data.applicationStatus)
       }
     } catch {
       // silently continue polling on network error
@@ -149,6 +149,7 @@ function StatusHeader({ status }: { status: string }) {
     DOCUMENTS_REQUIRED: 'Documents required',
     OFFER_ACCEPTED: 'Offer accepted',
     UNDERWRITING: 'Under review',
+    COMPLIANCE_HOLD: 'Under review',
     FUNDING_PENDING: 'Funding in progress',
     FUNDED: 'Funded',
     COMPLETED: 'Complete',

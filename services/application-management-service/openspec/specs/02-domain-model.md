@@ -132,41 +132,118 @@ Statuses:
 
 Applicant personal information as entered and confirmed by the prospect.
 
-For ITA applications, firstName, lastName, and address are prefilled from
-Customer Profile (read-only on the form). Phone, email, SSN, citizenship,
-and employment details are always entered by the applicant.
+## ITA vs Direct — Prefill Rules
 
-SSN is encrypted at rest and masked in all API responses (last 4 digits only).
-SSN is never logged.
+For ITA applications, `firstName`, `lastName`, `street`, `city`, `state`, and `zip` are prefilled
+from the Customer Profile Platform and are **read-only on the application form**.
 
-Attributes:
+The following fields are **always entered by the applicant** regardless of channel:
 
-* applicantId
-* firstName
-* lastName
-* dateOfBirth
-* citizenship
-* ssn (encrypted)
-* address
-* phone
-* email
-* employerName
-* employmentStatus
-* annualIncome
+* `phone`, `email`
+* `dateOfBirth`, `citizenship`
+* `ssn` (captured, verified, and tokenised — never stored raw)
+* `employerName`, `employmentStatus`, `annualIncome`
 
-Citizenship Values:
+---
 
-* US_CITIZEN
-* PERMANENT_RESIDENT
-* DACA
-* OTHER
+## Attributes
 
-Employment Status Values:
+| Field | Type | Nullable | Notes |
+|-------|------|----------|-------|
+| `applicantId` | UUID | No | PK, assigned at creation |
+| `applicationId` | UUID | No | FK to application |
+| `firstName` | String | No | Read-only for ITA; entered for DIRECT |
+| `lastName` | String | No | Read-only for ITA; entered for DIRECT |
+| `dateOfBirth` | LocalDate | No | Always entered by applicant |
+| `citizenship` | Citizenship | No | Enum — see values below |
+| `ssnToken` | String | No | Bolt tokenisation reference — never raw SSN |
+| `email` | String | No | Always entered by applicant |
+| `phone` | String | No | Always entered by applicant |
+| `street` | String | No | Read-only for ITA; entered for DIRECT |
+| `city` | String | No | Read-only for ITA; entered for DIRECT |
+| `state` | String (2) | No | 2-character US state code |
+| `zip` | String | No | Read-only for ITA; entered for DIRECT |
+| `employerName` | String | Yes | Optional — not required for RETIRED |
+| `employmentStatus` | EmploymentStatus | Yes | Enum — see values below |
+| `annualIncome` | BigDecimal | No | Minimum 0.00 |
+| `createdTimestamp` | LocalDateTime | No | Set at creation |
 
-* EMPLOYED
-* SELF_EMPLOYED
-* RETIRED
-* OTHER
+---
+
+## Enum: Citizenship
+
+```
+US_CITIZEN
+PERMANENT_RESIDENT
+DACA
+OTHER
+```
+
+---
+
+## Enum: EmploymentStatus
+
+```
+EMPLOYED
+SELF_EMPLOYED
+RETIRED
+OTHER
+```
+
+`employerName` is optional when `employmentStatus` is `RETIRED`.
+
+---
+
+## SSN Handling
+
+SSN is never stored in plaintext. The capture and storage flow is:
+
+```
+1. Applicant enters SSN on the form (9 digits, no dashes)
+2. UI calls POST /ssn/verify { ssn }
+   → SSNVerificationPort: verifySSN(ssn)
+   → Returns SSNVerificationToken { token, expiresAt (15 minutes) }
+3. UI includes token + raw SSN in POST /applications
+   → CreateApplicationUseCase:
+       a. Validates SSNVerificationToken is not expired
+       b. BoltTokenizationPort: tokenize(ssn) → ssnToken (opaque reference)
+       c. ssnToken stored on Applicant entity
+       d. Raw SSN is discarded — never persisted
+```
+
+### Value Object: SSNVerificationToken
+
+```
+token     String        — opaque verification token passed to POST /applications
+expiresAt LocalDateTime — 15-minute TTL from issue time
+isExpired()             — true if LocalDateTime.now() is after expiresAt
+```
+
+### Port: SSNVerificationPort
+
+```
+SSNVerificationToken verifySSN(String ssn)
+```
+
+Implemented by `SSNVerificationAdapter` (calls external SSN Verification Service).
+
+### Port: BoltTokenizationPort
+
+```
+String tokenize(String ssn)
+```
+
+Implemented by `BoltTokenizationAdapter` (calls Bolt tokenisation platform). Returns an opaque `ssnToken` stored on the `Applicant`. Throws `TokenizationUnavailableException` if the platform is unreachable.
+
+### SSN in Login Verification
+
+The `StubVerificationAdapter` (used when `verification.stub.enabled=true`) verifies applicant login by comparing the last 4 characters of `ssnToken` against the `last4SSN` supplied in the login request. The stub is replaced by a `VerificationPort` adapter when a dedicated verification service is available.
+
+### Rules
+
+* SSN must never appear in any log line — enforced by `SensitiveDataMaskingConverter`
+* SSN must never be returned in any API response — masked to last 4 digits only where displayed
+* `ssnToken` is never exposed in API responses
 
 ---
 
@@ -174,12 +251,15 @@ Employment Status Values:
 
 Requested loan details provided by the applicant.
 
-Attributes:
+## Attributes
 
-* loanRequestId
-* requestedAmount
-* termMonths
-* loanPurpose
+| Field | Type | Nullable | Constraints |
+|-------|------|----------|-------------|
+| `loanRequestId` | UUID | No | PK |
+| `applicationId` | UUID | No | FK to application |
+| `requestedAmount` | BigDecimal | No | Minimum $1,000.00 |
+| `termMonths` | Integer | No | 6 – 84 months |
+| `loanPurpose` | String | Yes | Free text or coded value |
 
 ---
 

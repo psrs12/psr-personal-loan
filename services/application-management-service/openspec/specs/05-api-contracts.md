@@ -85,20 +85,17 @@ Note: `customer` may be absent or partial when `prefillStatus` is `PARTIAL`.
 
 # 2. Verify SSN
 
-## POST
-
-```
-/ssn/verify
-```
+## POST `/ssn/verify`
 
 ## Purpose
 
-Verifies the applicant's SSN via an external SSN Verification Service before
-application submission. Called after the prospect completes the form, before
-POST /applications.
+Verifies the applicant's SSN via the external SSN Verification Service.
+Must be called after the prospect completes the form and before `POST /applications`.
 
-SSN is never logged. The verification token returned must be included in
-the subsequent POST /applications request.
+The returned `verificationToken` has a **15-minute TTL**. It must be included in
+the subsequent `POST /applications` request together with the raw SSN for tokenisation.
+
+SSN is **never logged**. The raw SSN must not appear in any log output.
 
 ---
 
@@ -106,129 +103,216 @@ the subsequent POST /applications request.
 
 ```json
 {
-  "ssn": "123-45-6789"
+  "ssn": "123456789"
 }
 ```
 
+`ssn` — 9 digits, no dashes or spaces. Validated with `@Pattern(regexp = "\\d{9}")`.
+
 ---
 
-## Response
+## Response — 200 OK
 
 ```json
 {
   "verificationToken": "SSN-VRF-abc123xyz",
-
   "verified": true
 }
 ```
 
 ---
 
-## Failure Response
+## Failure Response — 422
 
 ```json
 {
-  "errorCode": "SSN_VERIFICATION_FAILED",
-
-  "message": "SSN could not be verified",
-
-  "correlationId": "abc123"
+  "type": "about:blank",
+  "title": "Unprocessable Entity",
+  "status": 422,
+  "detail": "SSN could not be verified",
+  "instance": "/api/v1/application-management/ssn/verify"
 }
 ```
+
+Error code: `SSN_VERIFICATION_FAILED`
 
 ---
 
 # 3. Create Application
 
-## POST
-
-```
-/applications
-```
+## POST `/applications`
 
 ## Purpose
 
-Creates a personal loan application. Called after the prospect has filled in
-all required information and SSN has been verified.
+Creates a personal loan application. Called after the prospect has completed the form
+and SSN has been verified via `POST /ssn/verify`.
 
-For ITA path: include intakeId received from POST /invitations/initialize.
-For DIRECT path: omit intakeId — applicationSource defaults to DIRECT.
+The `ssn` field is passed here for Bolt tokenisation. It is tokenised immediately and the
+raw value is discarded — never persisted.
+
+For ITA path: include `intakeId` from `POST /invitations/initialize`.
+For DIRECT path: omit `intakeId`.
 
 ---
 
 ## Request
 
+All fields are flat on the request record (no nested `applicant` or `loanRequest` objects).
+
 ```json
 {
-  "intakeId": "INT123",
-
+  "intakeId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "ssnVerificationToken": "SSN-VRF-abc123xyz",
+  "ssn": "123456789",
 
-  "applicant": {
+  "firstName": "John",
+  "lastName": "Smith",
+  "dateOfBirth": "1985-06-15",
+  "citizenship": "US_CITIZEN",
 
-    "firstName": "John",
+  "email": "john.smith@example.com",
+  "phone": "6025550100",
 
-    "lastName": "Smith",
+  "street": "123 Main St",
+  "city": "Phoenix",
+  "state": "AZ",
+  "zip": "85001",
 
-    "dateOfBirth": "1985-06-15",
+  "employerName": "Acme Corp",
+  "employmentStatus": "EMPLOYED",
+  "annualIncome": 75000.00,
 
-    "citizenship": "US_CITIZEN",
-
-    "address": {
-
-      "street": "123 Main St",
-
-      "city": "Phoenix",
-
-      "state": "AZ",
-
-      "zip": "85001"
-    },
-
-    "phone": "6025550100",
-
-    "email": "john.smith@example.com",
-
-    "employment": {
-
-      "employerName": "Acme Corp",
-
-      "employmentStatus": "EMPLOYED",
-
-      "annualIncome": 75000
-    }
-  },
-
-  "loanRequest": {
-
-    "requestedAmount": 25000,
-
-    "term": 60,
-
-    "purpose": "DEBT_CONSOLIDATION"
-  }
+  "requestedAmount": 25000.00,
+  "termMonths": 60,
+  "loanPurpose": "DEBT_CONSOLIDATION"
 }
 ```
 
-Note: `intakeId` is optional. Omit for DIRECT applications.
+### Field Validation
+
+| Field | Required | Validation |
+|-------|----------|-----------|
+| `intakeId` | No | UUID; omit for DIRECT applications |
+| `ssnVerificationToken` | Yes | Non-blank; must not be expired (15-min TTL) |
+| `ssn` | Yes | 9 digits, no dashes (`\d{9}`) |
+| `firstName` | Yes | Non-blank |
+| `lastName` | Yes | Non-blank |
+| `dateOfBirth` | Yes | ISO date (yyyy-MM-dd) |
+| `citizenship` | Yes | `US_CITIZEN` \| `PERMANENT_RESIDENT` \| `DACA` \| `OTHER` |
+| `email` | Yes | Non-blank |
+| `phone` | Yes | Non-blank |
+| `street` | Yes | Non-blank |
+| `city` | Yes | Non-blank |
+| `state` | Yes | Exactly 2 characters |
+| `zip` | Yes | Non-blank |
+| `employerName` | No | Optional; not required for `RETIRED` |
+| `employmentStatus` | No | `EMPLOYED` \| `SELF_EMPLOYED` \| `RETIRED` \| `OTHER` |
+| `annualIncome` | Yes | `>= 0.00` |
+| `requestedAmount` | Yes | `>= 1000.00` |
+| `termMonths` | Yes | 6 – 84 (inclusive) |
+| `loanPurpose` | No | Free text |
+
+### ITA Prefill Note
+
+For ITA applications, `firstName`, `lastName`, `street`, `city`, `state`, and `zip`
+are prefilled from the Customer Profile Platform and are read-only on the UI.
+The applicant must still enter `citizenship`, `ssn`, `email`, `phone`, and all
+employment / income fields regardless of channel.
 
 ---
 
-## Response
+## Response — 200 OK
 
 ```json
 {
-  "applicationId": "APP123456",
-
-  "status": "CREATED",
-
-  "applicationSource": "INVITATION"
+  "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "applicationStatus": "CREATED",
+  "applicationSource": "INVITATION",
+  "createdTimestamp": "2026-06-30T10:00:00"
 }
 ```
 
 ---
 
-# 4. Retrieve Application
+# 4. Application Timeline
+
+## GET `/applications/{applicationId}/timeline`
+
+## Purpose
+
+Returns the immutable event log for an application in chronological order.
+Used by the applicant self-service portal to display the application journey.
+
+Requires `Authorization: Bearer <token>` — protected endpoint.
+
+---
+
+## Response — 200 OK
+
+```json
+{
+  "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "events": [
+    {
+      "auditId": "a1b2c3d4-...",
+      "eventType": "APPLICATION_CREATED",
+      "eventTimestamp": "2026-06-30T10:00:00",
+      "intakeId": null,
+      "payload": "{\"source\":\"DIRECT\",\"intakeId\":\"null\"}"
+    }
+  ]
+}
+```
+
+Events are returned in ascending `eventTimestamp` order.
+
+`intakeId` is nullable — present for INVITATION source applications only.
+
+`payload` is a JSON string captured at audit record creation time.
+
+---
+
+## Failure Responses
+
+| Status | Error Code | Condition |
+|--------|------------|-----------|
+| 401 | — | Missing or invalid `Authorization` header |
+| 404 | APPLICATION_NOT_FOUND | `applicationId` does not exist |
+
+---
+
+# 5. Application Status
+
+## GET `/applications/{applicationId}/status`
+
+## Purpose
+
+Returns the current status of an application. Used by the applicant self-service portal
+to poll for status changes after login.
+
+Requires `Authorization: Bearer <token>`.
+
+---
+
+## Response — 200 OK
+
+```json
+{
+  "applicationId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "applicationStatus": "APPROVED"
+}
+```
+
+## Failure Responses
+
+| Status | Condition |
+|--------|-----------|
+| 401 | Missing or invalid `Authorization` header |
+| 404 | `applicationId` does not exist |
+
+---
+
+# 6. Retrieve Application (stub)
 
 ## GET
 
@@ -238,7 +322,7 @@ Note: `intakeId` is optional. Omit for DIRECT applications.
 
 ---
 
-# 5. Update Application
+# 7. Update Application (stub)
 
 ## PUT
 
@@ -248,7 +332,7 @@ Note: `intakeId` is optional. Omit for DIRECT applications.
 
 ---
 
-# 6. Submit Application
+# 8. Submit Application
 
 ## POST
 

@@ -37,6 +37,10 @@ export default function ApplicantLoginPage({ apiBaseUrl, onLoginSuccess }: Props
         setError('Application not found.')
         return
       }
+      if (res.status === 422) {
+        setError('This application is no longer accessible. Please contact support if you need assistance.')
+        return
+      }
       if (!res.ok) {
         setError('An unexpected error occurred. Please try again.')
         return

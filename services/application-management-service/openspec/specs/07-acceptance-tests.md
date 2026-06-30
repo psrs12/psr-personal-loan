@@ -4,448 +4,344 @@
 
 Version: 1.0
 
-Status: Draft
+Status: Active
 
 ---
 
-# Feature
+# Feature: SSN Verification
 
-Application Intake and Application Creation
+## Scenario 1 — SSN verified successfully
 
----
+**Given** a valid 9-digit SSN is submitted to `POST /ssn/verify`
 
-# Scenario 1 - Create Application Using Valid Invitation
+**And** the SSN Verification Service returns a verification token
 
-## Given
+**When** the request is processed
 
-A prospect has received a valid Personal Loan invitation.
+**Then** the response shall be `200 OK` with `verificationToken` and `expiresAt`
 
-And
+**And** the Bolt Tokenisation Platform shall be called to pre-warm or validate the SSN
 
-The invitation exists in the Offer Management Platform.
-
-And
-
-The offer contains a valid customer reference identifier.
+**And** the raw SSN shall not be stored or logged
 
 ---
 
-## When
+## Scenario 2 — SSN verification fails
 
-The prospect enters the invitation identifier.
+**Given** a 9-digit SSN that cannot be verified is submitted to `POST /ssn/verify`
 
----
+**When** the SSN Verification Service returns a failure
 
-## Then
+**Then** the response shall be `422` with error code `SSN_VERIFICATION_FAILED`
 
-The system shall:
-
-* Validate the invitation.
-* Retrieve the associated offer.
-* Retrieve customer information.
-* Create an application intake context.
-* Create a new application.
-* Associate the application with the intake context.
+**And** no verification token shall be issued
 
 ---
 
-# Scenario 2 - Invitation Expired
+## Scenario 3 — SSN format invalid
 
-## Given
+**Given** an SSN submitted with dashes (e.g. `"123-45-6789"`) or fewer than 9 digits
 
-A prospect has an expired invitation.
+**When** `POST /ssn/verify` is called
 
----
-
-## When
-
-The prospect attempts to start an application.
+**Then** the response shall be `400 Bad Request` due to `@Pattern(regexp = "\\d{9}")` validation failure
 
 ---
 
-## Then
+# Feature: Application Creation — Direct Path
 
-The system shall:
+## Scenario 4 — Direct application created successfully
 
-* Reject the invitation.
-* Not create an application.
-* Return invitation expired error.
+**Given** a valid `ssnVerificationToken` exists in the token store (not expired)
 
-Example:
+**And** all required fields are present: `ssn` (9 digits), `firstName`, `lastName`, `dateOfBirth`, `citizenship`, `email`, `phone`, `street`, `city`, `state` (2 chars), `zip`, `annualIncome`, `requestedAmount` (>= 1000), `termMonths` (6–84)
 
-```json
-{
- "errorCode":"INVITATION_EXPIRED",
- "message":"Invitation has expired"
-}
-```
+**When** `POST /applications` is called without an `intakeId`
 
----
+**Then** the response shall be `200 OK` with `applicationId` and `applicationSource: DIRECT`
 
-# Scenario 3 - Invitation Not Found
+**And** the Bolt Tokenisation Platform shall be called with the raw SSN
 
-## Given
+**And** the `applicant` record shall store `ssn_token` (Bolt reference) — not the raw SSN
 
-The invitation identifier does not exist.
+**And** no raw SSN shall appear in the database or any log output
 
 ---
 
-## When
+## Scenario 5 — SSN verification token missing or expired
 
-The prospect starts application using invitation.
+**Given** an `ssnVerificationToken` that does not exist in the token store or has expired
 
----
+**When** `POST /applications` is called
 
-## Then
+**Then** the response shall be `400 Bad Request` with error code `SSN_VERIFICATION_TOKEN_INVALID`
 
-The system shall:
-
-* Reject the request.
-* Not create intake context.
-* Not create application.
+**And** no application shall be created
 
 ---
 
-# Scenario 4 - Successful Customer Prefill
+## Scenario 6 — Missing Authorization header
 
-## Given
+**Given** a valid request body
 
-A valid invitation exists.
+**When** `POST /applications` is called without `Authorization: Bearer <token>`
 
-And
-
-The offer contains customer reference information.
-
-And
-
-Customer information exists.
+**Then** the response shall be `401 Unauthorized`
 
 ---
 
-## When
+## Scenario 7 — Citizenship field validation
 
-Application Intake completes processing.
+**Given** an application request with an invalid `citizenship` value (not in enum)
 
----
+**When** `POST /applications` is called
 
-## Then
+**Then** the response shall be `400 Bad Request`
 
-The system shall provide:
-
-* Customer name.
-* Address.
-* Offer details.
-
-for application prefill.
-
-Phone and email are not prefilled. The applicant enters their own
-contact details when completing the application form.
+**And** no application shall be created
 
 ---
 
-# Scenario 5 - Customer Information Unavailable
+## Scenario 8 — Annual income below minimum
 
-## Given
+**Given** an application request with `annualIncome: -1`
 
-A valid invitation exists.
+**When** `POST /applications` is called
 
-And
-
-Offer retrieval succeeds.
-
-But
-
-Customer profile lookup fails.
+**Then** the response shall be `400 Bad Request` due to `@DecimalMin("0.00")` validation
 
 ---
 
-## When
+## Scenario 9 — Term months out of range
 
-The prospect starts application.
+**Given** an application request with `termMonths: 120` (exceeds maximum of 84)
 
----
+**When** `POST /applications` is called
 
-## Then
-
-The system shall:
-
-* Create application intake context.
-* Create application.
-* Mark prefill status as incomplete.
-* Allow applicant to manually enter missing information.
+**Then** the response shall be `400 Bad Request` due to `@Max(84)` validation
 
 ---
 
-# Scenario 6 - Create Direct Application Without Invitation
+## Scenario 10 — Requested amount below minimum
 
-## Given
+**Given** an application request with `requestedAmount: 500.00` (below minimum of $1,000)
 
-A prospect does not have an invitation.
+**When** `POST /applications` is called
 
----
-
-## When
-
-The prospect starts a new application.
+**Then** the response shall be `400 Bad Request` due to `@DecimalMin("1000.00")` validation
 
 ---
 
-## Then
+# Feature: Application Creation — ITA Path
 
-The system shall:
+## Scenario 11 — ITA application created successfully
 
-* Create direct application intake context.
-* Set application source as DIRECT.
-* Create application.
-* Allow applicant to enter required information.
+**Given** a valid invitation has been initialised and an `intakeId` was returned
 
----
+**And** a valid `ssnVerificationToken` exists
 
-# Scenario 7 - Application Resume
+**And** all required fields are provided (note: `firstName`, `lastName`, `street`, `city`, `state`, `zip` are prefilled from Customer Profile but still submitted in the request)
 
-## Given
+**When** `POST /applications` is called with the `intakeId`
 
-An applicant has an existing incomplete application.
+**Then** the response shall be `200 OK` with `applicationSource: INVITATION`
 
----
-
-## When
-
-The applicant resumes the application.
+**And** the application shall be associated with the `ApplicationIntakeContext`
 
 ---
 
-## Then
+## Scenario 12 — Invitation expired
 
-The system shall:
+**Given** an invitation identifier that has passed its expiry date
 
-* Retrieve application.
-* Retrieve saved information.
-* Restore application state.
-* Allow applicant to continue.
+**When** `POST /invitations/initialize` is called
 
----
+**Then** the response shall be `409` with error code `INVITATION_EXPIRED`
 
-# Scenario 8 - Application Cannot Submit Incomplete Data
-
-## Given
-
-An application is missing required information.
+**And** no `InvitationSession` or `ApplicationIntakeContext` shall be created
 
 ---
 
-## When
+## Scenario 13 — Invitation not found
 
-Applicant attempts submission.
+**Given** an invitation identifier that does not exist in the Offer Management Platform
 
----
+**When** `POST /invitations/initialize` is called
 
-## Then
-
-The system shall:
-
-* Validate application completeness.
-* Reject submission.
-* Return missing information details.
+**Then** the response shall be `404` with error code `INVITATION_NOT_FOUND`
 
 ---
 
-# Scenario 9 - Successful Application Submission
+## Scenario 14 — Customer profile unavailable — partial prefill
 
-## Given
+**Given** a valid invitation where Offer Management Platform succeeds
 
-An application contains all required information.
+**But** the Customer Profile Platform is unavailable
 
----
+**When** `POST /invitations/initialize` is called
 
-## When
+**Then** the response shall be `200 OK` with `prefillStatus: PARTIAL`
 
-Applicant submits application.
+**And** offer details shall be present in the response
 
----
+**And** the `customer` block shall be absent or empty
 
-## Then
-
-The system shall:
-
-* Change application status to SUBMITTED.
-* Publish ApplicationSubmitted event.
-* Send application for downstream processing.
+**And** the applicant shall manually enter name and address fields
 
 ---
 
-# Scenario 10 - Offer Platform Failure
+## Scenario 15 — Duplicate application prevention
 
-## Given
+**Given** an applicant already has an active application (status: `CREATED`, `IN_PROGRESS`, `SUBMITTED`, or `PROCESSING`) from the same invitation
 
-Offer Management Platform is unavailable.
+**When** the applicant attempts to create another application with the same invitation
 
----
+**Then** the response shall be `409` with error code `DUPLICATE_APPLICATION`
 
-## When
-
-Invitation intake is initiated.
+**And** no new `InvitationSession`, `IntakeContext`, or `Application` shall be created
 
 ---
 
-## Then
+## Scenario 16 — Invitation session expired before application creation
 
-The system shall:
+**Given** a prospect initialised an invitation but did not create an application within 30 minutes
 
-* Handle external failure.
-* Not create incomplete application.
-* Return temporary failure response.
+**When** `POST /applications` is called with the expired `intakeId`
 
----
+**Then** the response shall be `409` with error code `INTAKE_EXPIRED`
 
-# Scenario 11 - Duplicate Application Prevention
-
-## Given
-
-An applicant already has an active application created from an invitation.
-
-An active application is one in status CREATED, IN_PROGRESS,
-READY_FOR_SUBMISSION, SUBMITTED, or PROCESSING.
+**And** the prospect must re-initialise the invitation to obtain a new session
 
 ---
 
-## When
+# Feature: Application Lifecycle
 
-The applicant attempts to start another application using the same invitation.
+## Scenario 17 — Application submission
 
----
+**Given** an application with all required information in status `IN_PROGRESS`
 
-## Then
+**When** `POST /applications/{id}/submit` is called
 
-The system shall:
+**Then** the application status shall transition to `SUBMITTED`
 
-* Detect the existing active application.
-* Reject the intake request.
-* Not create a new IntakeContext or Application.
-* Return error DUPLICATE_APPLICATION.
+**And** an `ApplicationSubmitted` event shall be published
 
 ---
 
-# Scenario 11b - Invitation Reuse After Terminal Application
+## Scenario 18 — Submission rejected — incomplete application
 
-## Given
+**Given** an application missing required fields
 
-A prospect previously created an application from an invitation.
+**When** `POST /applications/{id}/submit` is called
 
-That application has reached a terminal status: CANCELLED or EXPIRED.
+**Then** the response shall be `422` with validation details
 
----
-
-## When
-
-The prospect attempts to use the same invitation again.
+**And** the application status shall remain unchanged
 
 ---
 
-## Then
+# Feature: Applicant Login
 
-The system shall:
+## Scenario 19 — Successful login
 
-* Detect no active application exists for the invitation.
-* Allow intake to proceed.
-* Create a new InvitationSession and IntakeContext.
+**Given** an application exists with a stored `ssnToken`
 
----
+**And** the applicant provides `applicationId`, `last4SSN` matching the last 4 characters of `ssnToken`, and correct `dateOfBirth`
 
-# Scenario 13 - Expired Invitation Session
+**When** `POST /applications/login` is called (no Authorization header required)
 
-## Given
-
-A prospect successfully initialized an invitation.
-
-The InvitationSession has expired (30 minutes elapsed without application creation).
+**Then** the response shall be `200 OK` with `sessionToken` (JWT, 30-minute expiry), `expiresAt`, `applicationId`, and `applicationStatus`
 
 ---
 
-## When
+## Scenario 20 — Login rejected — wrong credentials
 
-The prospect attempts to create an application using the expired session.
+**Given** an application exists
 
----
+**When** `POST /applications/login` is called with an incorrect `last4SSN` or `dateOfBirth`
 
-## Then
+**Then** the response shall be `401` with error code `APPLICANT_VERIFICATION_FAILED`
 
-The system shall:
-
-* Detect the session has expired.
-* Reject the application creation request.
-* Return error INTAKE_EXPIRED.
-* Require the prospect to re-initialize the invitation to obtain a new session.
+**And** no application details shall be returned
 
 ---
 
-# Scenario 12 - Audit Event Generation
+## Scenario 21 — Login rejected — terminal application
 
-## Given
+**Given** an application in a terminal state (`DECLINED`, `FUNDED`, `COMPLETED`, `CANCELLED`, `EXPIRED`)
 
-An application journey is initiated.
+**When** `POST /applications/login` is called
 
----
-
-## When
-
-Application Intake or Application Creation occurs.
+**Then** the response shall be `422` with error code `APPLICATION_NOT_ACCESSIBLE`
 
 ---
 
-## Then
+# Feature: Application Timeline
 
-The system shall capture:
+## Scenario 22 — Timeline returned in chronological order
 
-* Intake source.
-* Timestamp.
-* Application identifier.
-* Business event.
+**Given** a DIRECT application has been created and an `APPLICATION_CREATED` audit record exists
+
+**When** `GET /applications/{id}/timeline` is called with a valid `Authorization` header
+
+**Then** the response shall be `200 OK` with `applicationId` and a non-empty `events` array
+
+**And** the first event shall have `eventType: APPLICATION_CREATED`
+
+**And** events shall be ordered ascending by `eventTimestamp`
+
+**And** each event shall contain `auditId`, `eventType`, `eventTimestamp`, `intakeId` (nullable), and `payload`
 
 ---
 
-# Non Functional Acceptance Criteria
+## Scenario 23 — Timeline for unknown application returns 404
+
+**Given** a random UUID that does not correspond to any application
+
+**When** `GET /applications/{id}/timeline` is called with a valid `Authorization` header
+
+**Then** the response shall be `404 Not Found`
+
+---
+
+## Scenario 24 — Timeline requires Authorization header
+
+**Given** a valid `applicationId`
+
+**When** `GET /applications/{id}/timeline` is called **without** an `Authorization` header
+
+**Then** the response shall be `401 Unauthorized`
+
+---
+
+# Non-Functional Acceptance Criteria
 
 ## Performance
 
-Application initialization should complete within:
-
-Less than 2 seconds
-
-excluding external dependency latency.
-
----
+- `POST /ssn/verify` shall respond within 1 second excluding SSN Verification Service latency
+- `POST /applications` shall respond within 2 seconds excluding Bolt Tokenisation latency
+- `POST /applications/login` shall respond within 500ms
 
 ## Security
 
-The system shall:
+- Raw SSN must never appear in any log line — enforced by `SensitiveDataMaskingConverter`
+- `ssn_token` must never be returned in any API response
+- All endpoints except `POST /applications/login` require `Authorization: Bearer <token>`
+- Session tokens expire after 30 minutes
 
-* Protect customer information.
-* Avoid logging sensitive data.
-* Apply authentication and authorization.
+## Idempotency
 
----
-
-## Reliability
-
-External dependency failures shall:
-
-* Be handled gracefully.
-* Support retry where applicable.
-* Produce traceable errors.
+- Duplicate `ApplicationCreated` events must not create duplicate applications
 
 ---
 
 # Related Documents
 
-001-acquisition-business-capabilities.md
-
-002-application-intake-spec.md
-
-003-application-spec.md
-
-04-sequence-diagrams.md
-
-05-api-contracts.md
-
-06-persistence-model.md
+```
+services/application-management-service/openspec/specs/001-capability-spec.md
+services/application-management-service/openspec/specs/02-domain-model.md
+services/application-management-service/openspec/specs/04-sequence-diagrams.md
+services/application-management-service/openspec/specs/05-api-contracts.md
+services/application-management-service/openspec/specs/06-persistence-model.md
+openspec/application-management/spec.md
+```
