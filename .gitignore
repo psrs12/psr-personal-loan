@@ -30,4 +30,4 @@ target/
 # Environment
 
 .env
-application-local.yml
+application-local.ymldeploy/.env

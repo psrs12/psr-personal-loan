@@ -16,6 +16,11 @@ public class BearerTokenFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        String path = request.getRequestURI();
+        if (path.contains("/actuator") || path.endsWith("/login")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String auth = request.getHeader("Authorization");
         if (auth == null || !auth.startsWith("Bearer ") || auth.length() <= 7) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());

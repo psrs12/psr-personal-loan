@@ -6,6 +6,7 @@ import com.personalloan.pricingorchestration.infrastructure.external.creditmanag
 import com.personalloan.pricingorchestration.infrastructure.external.creditmanagement.dto.SoftPullRequest;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,6 +18,7 @@ public class CreditManagementAdapter implements CreditManagementPort {
 
     private final RestClient restClient;
 
+    @Autowired
     public CreditManagementAdapter(RestClient.Builder builder,
                                     @Value("${integration.credit-management.base-url}") String baseUrl) {
         this.restClient = builder.baseUrl(baseUrl).build();

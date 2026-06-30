@@ -1,6 +1,7 @@
 package com.personalloan.pricingorchestration.application.pricing;
 
 import com.personalloan.pricingorchestration.domain.pricing.FinalDecisionResponse;
+import com.personalloan.pricingorchestration.domain.pricing.PricingRequest;
 import com.personalloan.pricingorchestration.domain.pricing.port.ApplicationManagementPort;
 import com.personalloan.pricingorchestration.domain.pricing.port.CreditManagementPort;
 import com.personalloan.pricingorchestration.domain.pricing.port.DecisionPlatformPort;

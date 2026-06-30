@@ -1,34 +1,20 @@
 package com.personalloan.applicationmanagement.infrastructure.persistence.application;
 
 import com.personalloan.applicationmanagement.domain.application.*;
-import com.personalloan.applicationmanagement.domain.application.port.*;
+import com.personalloan.applicationmanagement.domain.application.port.ApplicationRepository;
 import com.personalloan.applicationmanagement.domain.invitation.ApplicationSource;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Component
-public class ApplicationJpaAdapter implements ApplicationRepository, ApplicantRepository,
-        LoanRequestRepository, ApplicationOfferRepository, ApplicationAuditRepository {
+public class ApplicationJpaAdapter implements ApplicationRepository {
 
     private final ApplicationJpaRepository applicationRepo;
-    private final ApplicantJpaRepository applicantRepo;
-    private final LoanRequestJpaRepository loanRequestRepo;
-    private final ApplicationOfferJpaRepository applicationOfferRepo;
-    private final ApplicationAuditJpaRepository auditRepo;
 
-    public ApplicationJpaAdapter(ApplicationJpaRepository applicationRepo,
-                                  ApplicantJpaRepository applicantRepo,
-                                  LoanRequestJpaRepository loanRequestRepo,
-                                  ApplicationOfferJpaRepository applicationOfferRepo,
-                                  ApplicationAuditJpaRepository auditRepo) {
+    public ApplicationJpaAdapter(ApplicationJpaRepository applicationRepo) {
         this.applicationRepo = applicationRepo;
-        this.applicantRepo = applicantRepo;
-        this.loanRequestRepo = loanRequestRepo;
-        this.applicationOfferRepo = applicationOfferRepo;
-        this.auditRepo = auditRepo;
     }
 
     @Override
@@ -45,72 +31,6 @@ public class ApplicationJpaAdapter implements ApplicationRepository, ApplicantRe
     @Override
     public boolean existsActiveApplicationForInvitation(String invitationId) {
         return applicationRepo.existsActiveApplicationForInvitation(invitationId);
-    }
-
-    @Override
-    public Applicant save(Applicant applicant) {
-        applicantRepo.save(toEntity(applicant));
-        return applicant;
-    }
-
-    @Override
-    public Optional<Applicant> findByApplicationId(UUID applicationId) {
-        return applicantRepo.findByApplicationId(applicationId).map(this::toApplicantDomain);
-    }
-
-    @Override
-    public LoanRequest save(LoanRequest loanRequest) {
-        loanRequestRepo.save(toEntity(loanRequest));
-        return loanRequest;
-    }
-
-    @Override
-    public ApplicationOffer save(ApplicationOffer offer) {
-        applicationOfferRepo.save(toEntity(offer));
-        return offer;
-    }
-
-    @Override
-    public void save(ApplicationAuditRecord record) {
-        ApplicationAuditJpaEntity entity = new ApplicationAuditJpaEntity();
-        entity.setAuditId(record.auditId());
-        entity.setApplicationId(record.applicationId());
-        entity.setIntakeId(record.intakeId());
-        entity.setEventType(record.eventType());
-        entity.setEventTimestamp(record.eventTimestamp());
-        entity.setPayload(record.payload());
-        auditRepo.save(entity);
-    }
-
-    @Override
-    public List<ApplicationAuditRecord> findByApplicationId(UUID applicationId) {
-        return auditRepo.findByApplicationIdOrderByEventTimestampAsc(applicationId)
-                .stream()
-                .map(this::toAuditDomain)
-                .toList();
-    }
-
-    @Override
-    public List<ApplicationAuditRecord> findByApplicationIdOrIntakeId(UUID applicationId, UUID intakeId) {
-        return auditRepo.findByApplicationIdOrIntakeIdOrderByEventTimestampAsc(applicationId, intakeId)
-                .stream()
-                .map(this::toAuditDomain)
-                .toList();
-    }
-
-    private Applicant toApplicantDomain(ApplicantJpaEntity e) {
-        return Applicant.reconstitute(
-                e.getApplicantId(), e.getApplicationId(), e.getFirstName(), e.getLastName(),
-                e.getDateOfBirth(), Citizenship.valueOf(e.getCitizenship()), e.getSsnToken(),
-                e.getEmail(), e.getPhone(), e.getStreet(), e.getCity(), e.getState(), e.getZip(),
-                e.getEmployerName(),
-                e.getEmploymentStatus() != null ? EmploymentStatus.valueOf(e.getEmploymentStatus()) : null,
-                e.getAnnualIncome(), e.getCreatedTimestamp());
-    }
-
-    private ApplicationAuditRecord toAuditDomain(ApplicationAuditJpaEntity e) {
-        return new ApplicationAuditRecord(e.getAuditId(), e.getApplicationId(), e.getIntakeId(),
-                e.getEventType(), e.getEventTimestamp(), e.getPayload());
     }
 
     private ApplicationJpaEntity toEntity(Application app) {
@@ -140,52 +60,5 @@ public class ApplicationJpaAdapter implements ApplicationRepository, ApplicantRe
                 e.getCampaignOfferId(),
                 e.getCampaignOfferTerms(),
                 e.getApplicationExpiryDate());
-    }
-
-    private ApplicantJpaEntity toEntity(Applicant a) {
-        ApplicantJpaEntity e = new ApplicantJpaEntity();
-        e.setApplicantId(a.getApplicantId());
-        e.setApplicationId(a.getApplicationId());
-        e.setFirstName(a.getFirstName());
-        e.setLastName(a.getLastName());
-        e.setDateOfBirth(a.getDateOfBirth());
-        e.setCitizenship(a.getCitizenship().name());
-        e.setSsnToken(a.getSsnToken());
-        e.setEmail(a.getEmail());
-        e.setPhone(a.getPhone());
-        e.setStreet(a.getStreet());
-        e.setCity(a.getCity());
-        e.setState(a.getState());
-        e.setZip(a.getZip());
-        e.setEmployerName(a.getEmployerName());
-        e.setEmploymentStatus(a.getEmploymentStatus() != null ? a.getEmploymentStatus().name() : null);
-        e.setAnnualIncome(a.getAnnualIncome());
-        e.setCreatedTimestamp(a.getCreatedTimestamp());
-        return e;
-    }
-
-    private LoanRequestJpaEntity toEntity(LoanRequest lr) {
-        LoanRequestJpaEntity e = new LoanRequestJpaEntity();
-        e.setLoanRequestId(lr.getLoanRequestId());
-        e.setApplicationId(lr.getApplicationId());
-        e.setRequestedAmount(lr.getRequestedAmount());
-        e.setTermMonths(lr.getTermMonths());
-        e.setLoanPurpose(lr.getLoanPurpose());
-        e.setCreatedTimestamp(lr.getCreatedTimestamp());
-        return e;
-    }
-
-    private ApplicationOfferJpaEntity toEntity(ApplicationOffer o) {
-        ApplicationOfferJpaEntity e = new ApplicationOfferJpaEntity();
-        e.setApplicationOfferId(o.getApplicationOfferId());
-        e.setApplicationId(o.getApplicationId());
-        e.setOfferId(o.getOfferId());
-        e.setCustomerReferenceId(o.getCustomerReferenceId());
-        e.setLoanAmount(o.getLoanAmount());
-        e.setApr(o.getApr());
-        e.setTermMonths(o.getTermMonths());
-        e.setExpirationDate(o.getExpirationDate());
-        e.setCapturedTimestamp(o.getCapturedTimestamp());
-        return e;
     }
 }

@@ -1,7 +1,7 @@
 package com.personalloan.applicationmanagement.infrastructure.persistence.pricing;
 
 import com.personalloan.applicationmanagement.domain.pricing.*;
-import com.personalloan.applicationmanagement.domain.pricing.port.*;
+import com.personalloan.applicationmanagement.domain.pricing.port.PricingOfferRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -9,18 +9,12 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Component
-public class PricingJpaAdapter implements PricingOfferRepository, OfferSelectionRepository, ConsentRecordRepository {
+public class PricingJpaAdapter implements PricingOfferRepository {
 
     private final PricingOfferJpaRepository pricingOfferRepo;
-    private final OfferSelectionJpaRepository offerSelectionRepo;
-    private final ConsentRecordJpaRepository consentRecordRepo;
 
-    public PricingJpaAdapter(PricingOfferJpaRepository pricingOfferRepo,
-                              OfferSelectionJpaRepository offerSelectionRepo,
-                              ConsentRecordJpaRepository consentRecordRepo) {
+    public PricingJpaAdapter(PricingOfferJpaRepository pricingOfferRepo) {
         this.pricingOfferRepo = pricingOfferRepo;
-        this.offerSelectionRepo = offerSelectionRepo;
-        this.consentRecordRepo = consentRecordRepo;
     }
 
     @Override
@@ -44,36 +38,6 @@ public class PricingJpaAdapter implements PricingOfferRepository, OfferSelection
     @Override
     public void saveAll(List<PricingOffer> offers) {
         pricingOfferRepo.saveAll(offers.stream().map(this::toEntity).toList());
-    }
-
-    @Override
-    public OfferSelection save(OfferSelection selection) {
-        offerSelectionRepo.save(toEntity(selection));
-        return selection;
-    }
-
-    @Override
-    public Optional<OfferSelection> findByApplicationId(UUID applicationId) {
-        return offerSelectionRepo.findByApplicationId(applicationId).map(this::toDomain);
-    }
-
-    @Override
-    public ConsentRecord save(ConsentRecord record) {
-        consentRecordRepo.save(toEntity(record));
-        return record;
-    }
-
-    @Override
-    public List<ConsentRecord> findByApplicationId(UUID applicationId) {
-        return consentRecordRepo.findByApplicationId(applicationId).stream()
-                .map(this::toDomain)
-                .toList();
-    }
-
-    @Override
-    public Optional<ConsentRecord> findByApplicationIdAndConsentType(UUID applicationId, ConsentType consentType) {
-        return consentRecordRepo.findByApplicationIdAndConsentType(applicationId, consentType.name())
-                .map(this::toDomain);
     }
 
     private PricingOfferJpaEntity toEntity(PricingOffer o) {
@@ -100,37 +64,5 @@ public class PricingJpaAdapter implements PricingOfferRepository, OfferSelection
                 e.getMonthlyRepayment(), e.getTotalRepayable(), e.getOfferExpiryDate(),
                 e.getPricingModelRef(), e.getBureauSnapshotRef(),
                 PricingOfferStatus.valueOf(e.getOfferStatus()), e.getCreatedAt());
-    }
-
-    private OfferSelectionJpaEntity toEntity(OfferSelection s) {
-        OfferSelectionJpaEntity e = new OfferSelectionJpaEntity();
-        e.setId(s.getId());
-        e.setApplicationId(s.getApplicationId());
-        e.setSelectedPricingOfferId(s.getSelectedPricingOfferId());
-        e.setOfferSelectedTimestamp(s.getOfferSelectedTimestamp());
-        return e;
-    }
-
-    private OfferSelection toDomain(OfferSelectionJpaEntity e) {
-        return OfferSelection.create(e.getApplicationId(), e.getSelectedPricingOfferId());
-    }
-
-    private ConsentRecordJpaEntity toEntity(ConsentRecord c) {
-        ConsentRecordJpaEntity e = new ConsentRecordJpaEntity();
-        e.setId(c.getId());
-        e.setApplicationId(c.getApplicationId());
-        e.setConsentType(c.getConsentType().name());
-        e.setConsentGivenAt(c.getConsentGivenAt());
-        e.setConsentChannel(c.getConsentChannel());
-        e.setApplicantReference(c.getApplicantReference());
-        e.setSelectedPricingOfferId(c.getSelectedPricingOfferId());
-        return e;
-    }
-
-    private ConsentRecord toDomain(ConsentRecordJpaEntity e) {
-        if (ConsentType.HARD_PULL.name().equals(e.getConsentType())) {
-            return ConsentRecord.createHardPullConsent(e.getApplicationId(), e.getConsentChannel(), e.getApplicantReference());
-        }
-        return ConsentRecord.createOfferAcceptanceConsent(e.getApplicationId(), e.getConsentChannel(), e.getSelectedPricingOfferId());
     }
 }

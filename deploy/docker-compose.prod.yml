@@ -1,0 +1,101 @@
+# Production — runs on Oracle Cloud A1 ARM VM
+# External dependencies: Neon (PostgreSQL), Confluent Cloud (Kafka)
+# Usage: docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env up -d
+
+services:
+
+  application-management-service:
+    image: ${IMAGE_REGISTRY_PREFIX}/application-management-service:${IMAGE_TAG:-latest}
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      DB_URL: ${APP_MANAGEMENT_DB_URL}
+      DB_USERNAME: ${APP_MANAGEMENT_DB_USERNAME}
+      DB_PASSWORD: ${APP_MANAGEMENT_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      JWT_SECRET: ${JWT_SECRET}
+      BOLT_API_KEY: ${BOLT_API_KEY:-stub}
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/api/v1/application-management/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  pricing-orchestration-service:
+    image: ${IMAGE_REGISTRY_PREFIX}/pricing-orchestration-service:${IMAGE_TAG:-latest}
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      DB_URL: ${PRICING_DB_URL}
+      DB_USERNAME: ${PRICING_DB_USERNAME}
+      DB_PASSWORD: ${PRICING_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/api/v1/pricing-orchestration/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  document-service:
+    image: ${IMAGE_REGISTRY_PREFIX}/document-service:${IMAGE_TAG:-latest}
+    ports:
+      - "8084:8084"
+    environment:
+      DOCUMENT_DB_URL: ${DOCUMENT_DB_URL}
+      DOCUMENT_DB_USER: ${DOCUMENT_DB_USERNAME}
+      DOCUMENT_DB_PASSWORD: ${DOCUMENT_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      APPLICATION_MANAGEMENT_URL: http://application-management-service:8081
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  offer-acceptance-service:
+    image: ${IMAGE_REGISTRY_PREFIX}/offer-acceptance-service:${IMAGE_TAG:-latest}
+    ports:
+      - "8085:8085"
+    environment:
+      OFFER_ACCEPTANCE_DB_URL: ${OFFER_ACCEPTANCE_DB_URL}
+      OFFER_ACCEPTANCE_DB_USER: ${OFFER_ACCEPTANCE_DB_USERNAME}
+      OFFER_ACCEPTANCE_DB_PASSWORD: ${OFFER_ACCEPTANCE_DB_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      SPRING_KAFKA_PROPERTIES_SASL_MECHANISM: SCRAM-SHA-256
+      SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
+      SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Grafana Alloy — metrics scraping + log forwarding agent
+  grafana-alloy:
+    image: grafana/alloy:latest
+    ports:
+      - "12345:12345"
+    volumes:
+      - ./grafana/alloy-config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
+    restart: unless-stopped
