@@ -40,7 +40,7 @@ public class InvitationController {
                 "address", address,
                 "offerId", offer != null && offer.offerId() != null ? offer.offerId() : "",
                 "requestedAmount", offer != null && offer.loanAmount() != null ? offer.loanAmount() : 0,
-                "requestedTermMonths", offer != null && offer.termMonths() != null ? offer.termMonths() : 0
+                "requestedTermMonths", offer != null ? offer.termMonths() : 0
         ));
     }
 

@@ -89,6 +89,18 @@ services:
       retries: 3
       start_period: 60s
 
+  application-management-ui:
+    image: ${IMAGE_REGISTRY_PREFIX}/application-management-ui:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+
+  pricing-offers-ui:
+    image: ${IMAGE_REGISTRY_PREFIX}/pricing-offers-ui:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+
+  document-management-ui:
+    image: ${IMAGE_REGISTRY_PREFIX}/document-management-ui:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+
   # Grafana Alloy — metrics scraping + log forwarding agent
   grafana-alloy:
     image: grafana/alloy:latest
