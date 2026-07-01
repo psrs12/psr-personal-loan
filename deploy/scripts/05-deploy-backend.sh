@@ -30,6 +30,11 @@ scp -i "${ORACLE_SSH_KEY_PATH}" \
   "${SCRIPT_DIR}/../.env" \
   "${ORACLE_VM_USER}@${ORACLE_VM_IP}:${REMOTE_DIR}/.env"
 
+# Upload Caddyfile
+scp -i "${ORACLE_SSH_KEY_PATH}" \
+  "${SCRIPT_DIR}/../Caddyfile" \
+  "${ORACLE_VM_USER}@${ORACLE_VM_IP}:${REMOTE_DIR}/Caddyfile"
+
 # Upload Grafana Alloy config
 scp -i "${ORACLE_SSH_KEY_PATH}" \
   -r "${SCRIPT_DIR}/../grafana" \

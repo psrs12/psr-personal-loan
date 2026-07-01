@@ -2,6 +2,12 @@
 # External dependencies: Neon (PostgreSQL), Confluent Cloud (Kafka)
 # Usage: docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env up -d
 
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
 
   application-management-service:
@@ -20,6 +26,7 @@ services:
       SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
       SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8081/api/v1/application-management/actuator/health"]
       interval: 30s
@@ -41,6 +48,7 @@ services:
       SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
       SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8082/api/v1/pricing-orchestration/actuator/health"]
       interval: 30s
@@ -62,6 +70,7 @@ services:
       SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
       SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
       interval: 30s
@@ -82,6 +91,7 @@ services:
       SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL: SASL_SSL
       SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG: "org.apache.kafka.common.security.scram.ScramLoginModule required username='${CONFLUENT_API_KEY}' password='${CONFLUENT_API_SECRET}';"
     restart: unless-stopped
+    logging: *default-logging
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
       interval: 30s
@@ -92,14 +102,17 @@ services:
   application-management-ui:
     image: ${IMAGE_REGISTRY_PREFIX}/application-management-ui:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    logging: *default-logging
 
   pricing-offers-ui:
     image: ${IMAGE_REGISTRY_PREFIX}/pricing-offers-ui:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    logging: *default-logging
 
   document-management-ui:
     image: ${IMAGE_REGISTRY_PREFIX}/document-management-ui:${IMAGE_TAG:-latest}
     restart: unless-stopped
+    logging: *default-logging
 
   # Grafana Alloy — metrics scraping + log forwarding agent
   grafana-alloy:
@@ -111,3 +124,30 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
     restart: unless-stopped
+    logging: *default-logging
+
+  # Caddy — reverse proxy / TLS termination for bare-IP HTTPS
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./certs:/etc/caddy/certs:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - application-management-service
+      - pricing-orchestration-service
+      - offer-acceptance-service
+      - document-service
+      - application-management-ui
+      - pricing-offers-ui
+      - document-management-ui
+    restart: unless-stopped
+    logging: *default-logging
+
+volumes:
+  caddy_data:
+  caddy_config:
