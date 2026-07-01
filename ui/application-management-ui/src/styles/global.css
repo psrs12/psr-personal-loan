@@ -223,3 +223,84 @@ p {
   color: #1565c0;
   margin-bottom: 20px;
 }
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  gap: 0;
+  margin-bottom: 28px;
+  border-bottom: 2px solid #d0dae8;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #7a8ea8;
+  cursor: default;
+  transition: color 0.15s;
+}
+
+.tab-btn.active {
+  color: #1565c0;
+  border-bottom-color: #1565c0;
+}
+
+.tab-btn:not(.active):not(.disabled) {
+  color: #2d3f55;
+  cursor: pointer;
+}
+
+.tab-btn:not(.active):not(.disabled):hover {
+  color: #1565c0;
+}
+
+.tab-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #d0dae8;
+  color: #5a6a7e;
+}
+
+.tab-btn.active .tab-number {
+  background: #1565c0;
+  color: #fff;
+}
+
+/* Tab navigation actions */
+.tab-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e8f0;
+}
+
+.btn-back {
+  background: transparent;
+  color: #1565c0;
+  border: 1px solid #1565c0;
+  border-radius: 5px;
+  padding: 11px 22px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-back:hover {
+  background: #e8f0fe;
+}
