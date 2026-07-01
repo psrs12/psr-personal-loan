@@ -52,6 +52,7 @@ public class ApplicationController {
                 request.email(),
                 request.phone(),
                 request.street(),
+                request.addressLine2(),
                 request.city(),
                 request.state(),
                 request.zip(),

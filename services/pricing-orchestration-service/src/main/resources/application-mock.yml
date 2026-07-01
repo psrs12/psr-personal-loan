@@ -1,0 +1,7 @@
+integration:
+  credit-management:
+    base-url: http://localhost:9090
+    timeout-seconds: 5
+  decision-platform:
+    base-url: http://localhost:9090
+    timeout-seconds: 5

@@ -63,6 +63,19 @@ services:
        kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic document-events --partitions 3 --replication-factor 1 &&
        echo 'Topics created.'"
 
+  wiremock:
+    image: wiremock/wiremock:3.9.1
+    ports:
+      - "9090:8080"
+    volumes:
+      - ../wiremock/mappings:/home/wiremock/mappings:ro
+    command: ["--verbose"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:8080/__admin/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # ---- Backend Services ----
 
   application-management-service:
@@ -75,17 +88,24 @@ services:
     ports:
       - "8081:8081"
     environment:
+      SPRING_PROFILES_ACTIVE: mock
       SERVER_PORT: 8081
       DB_URL: jdbc:postgresql://postgres:5432/app_management
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       JWT_SECRET: local-dev-secret-change-in-production
-      BOLT_API_KEY: stub
+      BOLT_API_KEY: mock-key
+      BOLT_URL: http://wiremock:8080
+      OFFER_MANAGEMENT_URL: http://wiremock:8080
+      CUSTOMER_PROFILE_URL: http://wiremock:8080
+      SSN_VERIFICATION_URL: http://wiremock:8080
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      wiremock:
         condition: service_healthy
     restart: unless-stopped
 
@@ -99,15 +119,21 @@ services:
     ports:
       - "8082:8082"
     environment:
+      SPRING_PROFILES_ACTIVE: mock
       SERVER_PORT: 8082
       DB_URL: jdbc:postgresql://postgres:5432/pricing_orchestration
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      CREDIT_MANAGEMENT_URL: http://wiremock:8080
+      DECISION_PLATFORM_URL: http://wiremock:8080
+      APPLICATION_MANAGEMENT_URL: http://application-management-service:8081
     depends_on:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      wiremock:
         condition: service_healthy
     restart: unless-stopped
 

@@ -1,0 +1,26 @@
+{
+  "mappings": [
+    {
+      "name": "customer-profile-get",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/customers/.*"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "customerReferenceId": "cref-mock-001",
+          "firstName": "Jane",
+          "lastName": "Smith",
+          "street": "47 Mock Street",
+          "city": "Springfield",
+          "state": "IL",
+          "zip": "62701"
+        }
+      }
+    }
+  ]
+}

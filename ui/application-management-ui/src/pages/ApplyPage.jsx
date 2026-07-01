@@ -40,7 +40,7 @@ const EMPTY_FORM = {
   phone: '',
   email: '',
   addressLine1: '',
-  apartmentSuite: '',
+  addressLine2: '',
   city: '',
   state: '',
   postcode: '',
@@ -196,6 +196,7 @@ export default function ApplyPage() {
     try {
       const address = {
         line1: form.addressLine1,
+        line2: form.addressLine2 || null,
         city: form.city,
         state: form.state,
         postcode: form.postcode,
@@ -208,7 +209,7 @@ export default function ApplyPage() {
       };
       const contact = { phone: form.phone, email: form.email };
       const payload = isITA
-        ? { applicationSource: 'INVITATION', intakeId: prefill.intakeId, firstName: form.firstName, lastName: form.lastName, address, ...contact, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment }
+        ? { applicationSource: 'INVITATION', intakeId: prefill.intakeId, firstName: form.firstName, lastName: form.lastName, dateOfBirth: form.dateOfBirth, ssn: form.ssn, address, ...contact, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment }
         : { applicationSource: 'DIRECT', firstName: form.firstName, lastName: form.lastName, dateOfBirth: form.dateOfBirth, ssn: form.ssn, address, ...contact, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment };
       await createApplication(payload);
       navigate('/portal/login');
@@ -272,7 +273,7 @@ export default function ApplyPage() {
                   <label>How much do you need?</label>
                   <input type="number" min="1000" step="100" value={form.requestedAmount}
                     onChange={e => set('requestedAmount', e.target.value)}
-                    readOnly={isITA} required placeholder="e.g. $15,000" />
+                    required placeholder="e.g. $15,000" />
                 </div>
                 <div className="form-group">
                   <label>What's the purpose?</label>
@@ -288,8 +289,7 @@ export default function ApplyPage() {
                   {TERM_OPTIONS.map(t => (
                     <button key={t} type="button"
                       className={`term-pill${form.requestedTermMonths === t ? ' term-pill--selected' : ''}`}
-                      onClick={() => !isITA && set('requestedTermMonths', t)}
-                      disabled={isITA}>
+                      onClick={() => set('requestedTermMonths', t)}>
                       {t}
                     </button>
                   ))}
@@ -324,8 +324,8 @@ export default function ApplyPage() {
 
               <div className="form-group">
                 <label>Apartment / Suite <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span></label>
-                <input type="text" value={form.apartmentSuite} onChange={e => set('apartmentSuite', e.target.value)}
-                  readOnly={isITA} placeholder="Apt, Suite, Unit, etc." />
+                <input type="text" value={form.addressLine2} onChange={e => set('addressLine2', e.target.value)}
+                  placeholder="Apt, Suite, Unit, etc." />
               </div>
 
               <div className="form-row-3">
@@ -375,20 +375,18 @@ export default function ApplyPage() {
             <div className="apply-section">
               <div className="apply-section-title">Tell us about your employment &amp; income</div>
 
-              {!isITA && (
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Date of Birth</label>
-                    <input type="date" value={form.dateOfBirth}
-                      onChange={e => set('dateOfBirth', e.target.value)} required />
-                  </div>
-                  <div className="form-group">
-                    <label>Social Security Number</label>
-                    <input type="password" value={form.ssn} onChange={e => set('ssn', e.target.value)}
-                      required placeholder="XXX-XX-XXXX" autoComplete="off" />
-                  </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Date of Birth</label>
+                  <input type="date" value={form.dateOfBirth}
+                    onChange={e => set('dateOfBirth', e.target.value)} required />
                 </div>
-              )}
+                <div className="form-group">
+                  <label>Social Security Number</label>
+                  <input type="password" value={form.ssn} onChange={e => set('ssn', e.target.value)}
+                    required placeholder="XXX-XX-XXXX" autoComplete="off" />
+                </div>
+              </div>
 
               <div className="form-row">
                 <div className="form-group">
@@ -447,7 +445,7 @@ export default function ApplyPage() {
               <div className="review-group-label">Personal Details</div>
               <div className="review-block">
                 <ReviewRow label="Name" value={[form.firstName, form.lastName].filter(Boolean).join(' ')} />
-                <ReviewRow label="Address" value={[form.addressLine1, form.apartmentSuite, form.city, form.state, form.postcode].filter(Boolean).join(', ')} />
+                <ReviewRow label="Address" value={[form.addressLine1, form.addressLine2, form.city, form.state, form.postcode].filter(Boolean).join(', ')} />
                 <ReviewRow label="Phone" value={form.phone} />
                 <ReviewRow label="Email" value={form.email} />
               </div>

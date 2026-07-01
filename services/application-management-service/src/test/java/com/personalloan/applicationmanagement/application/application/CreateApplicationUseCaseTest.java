@@ -64,7 +64,7 @@ class CreateApplicationUseCaseTest {
         return new CreateApplicationCommand(
                 intakeId, validToken, "John", "Doe", LocalDate.of(1990, 1, 1),
                 Citizenship.US_CITIZEN, "123456789", "john@example.com", "555-1234",
-                "123 Main St", "Springfield", "IL", "62701",
+                "123 Main St", null, "Springfield", "IL", "62701",
                 "Acme Corp", EmploymentStatus.EMPLOYED, new BigDecimal("75000"),
                 new BigDecimal("10000"), 36, "HOME_IMPROVEMENT"
         );
@@ -74,7 +74,7 @@ class CreateApplicationUseCaseTest {
         return new CreateApplicationCommand(
                 null, validToken, "Jane", "Doe", LocalDate.of(1985, 6, 15),
                 Citizenship.US_CITIZEN, "987654321", "jane@example.com", "555-5678",
-                "456 Oak Ave", "Chicago", "IL", "60601",
+                "456 Oak Ave", null, "Chicago", "IL", "60601",
                 null, EmploymentStatus.SELF_EMPLOYED, new BigDecimal("90000"),
                 new BigDecimal("15000"), 48, null
         );

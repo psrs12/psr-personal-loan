@@ -117,7 +117,7 @@ public class CreateApplicationUseCase {
         Applicant applicant = Applicant.create(
                 applicationId, command.firstName(), command.lastName(), command.dateOfBirth(),
                 citizenship, ssnToken, command.email(), command.phone(),
-                command.street(), command.city(), command.state(), command.zip(),
+                command.street(), command.addressLine2(), command.city(), command.state(), command.zip(),
                 command.employerName(), command.employmentStatus(), command.annualIncome()
         );
         applicantRepository.save(applicant);

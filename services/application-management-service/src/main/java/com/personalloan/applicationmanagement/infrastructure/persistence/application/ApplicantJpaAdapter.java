@@ -31,7 +31,8 @@ public class ApplicantJpaAdapter implements ApplicantRepository {
         return Applicant.reconstitute(
                 e.getApplicantId(), e.getApplicationId(), e.getFirstName(), e.getLastName(),
                 e.getDateOfBirth(), Citizenship.valueOf(e.getCitizenship()), e.getSsnToken(),
-                e.getEmail(), e.getPhone(), e.getStreet(), e.getCity(), e.getState(), e.getZip(),
+                e.getEmail(), e.getPhone(), e.getStreet(), e.getAddressLine2(),
+                e.getCity(), e.getState(), e.getZip(),
                 e.getEmployerName(),
                 e.getEmploymentStatus() != null ? EmploymentStatus.valueOf(e.getEmploymentStatus()) : null,
                 e.getAnnualIncome(), e.getCreatedTimestamp());
@@ -49,6 +50,7 @@ public class ApplicantJpaAdapter implements ApplicantRepository {
         e.setEmail(a.getEmail());
         e.setPhone(a.getPhone());
         e.setStreet(a.getStreet());
+        e.setAddressLine2(a.getAddressLine2());
         e.setCity(a.getCity());
         e.setState(a.getState());
         e.setZip(a.getZip());

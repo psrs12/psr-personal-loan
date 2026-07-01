@@ -1,0 +1,36 @@
+{
+  "mappings": [
+    {
+      "name": "credit-soft-pull",
+      "request": {
+        "method": "POST",
+        "urlPattern": "/credit/soft-pull"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "creditReportReferenceId": "soft-pull-ref-mock-001"
+        }
+      }
+    },
+    {
+      "name": "credit-hard-pull",
+      "request": {
+        "method": "POST",
+        "urlPattern": "/credit/hard-pull"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "creditReportReferenceId": "hard-pull-ref-mock-001"
+        }
+      }
+    }
+  ]
+}

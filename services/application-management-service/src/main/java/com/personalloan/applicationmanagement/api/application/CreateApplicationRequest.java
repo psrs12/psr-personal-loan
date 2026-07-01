@@ -12,17 +12,18 @@ public record CreateApplicationRequest(
         UUID intakeId,
 
         String ssnVerificationToken,
-        @Pattern(regexp = "\\d{9}", message = "SSN must be 9 digits") String ssn,
+        @NotBlank @Pattern(regexp = "\\d{9}", message = "SSN must be 9 digits") String ssn,
 
         @NotBlank String firstName,
         @NotBlank String lastName,
-        LocalDate dateOfBirth,
+        @NotNull LocalDate dateOfBirth,
         Citizenship citizenship,
 
         @NotBlank String email,
         @NotBlank String phone,
 
         @NotBlank String street,
+        String addressLine2,
         @NotBlank String city,
         @NotBlank @Size(min = 2, max = 2) String state,
         @NotBlank String zip,

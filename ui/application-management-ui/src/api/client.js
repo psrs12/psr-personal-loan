@@ -49,6 +49,7 @@ export async function createApplication(payload) {
     email: payload.email,
     phone: payload.phone,
     street: payload.address?.line1 ?? payload.street,
+    addressLine2: payload.address?.line2 ?? payload.addressLine2 ?? null,
     city: payload.address?.city ?? payload.city,
     state: payload.address?.state ?? payload.state,
     zip: payload.address?.postcode ?? payload.zip,

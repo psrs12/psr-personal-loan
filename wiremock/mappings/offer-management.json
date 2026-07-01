@@ -1,0 +1,39 @@
+{
+  "mappings": [
+    {
+      "name": "offer-management-validate-invitation",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/invitations/.*/validate"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {}
+      }
+    },
+    {
+      "name": "offer-management-get-offer",
+      "request": {
+        "method": "GET",
+        "urlPattern": "/invitations/.*/offer"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "offerId": "offer-mock-001",
+          "customerReferenceId": "cref-mock-001",
+          "loanAmount": 10000.00,
+          "apr": 9.99,
+          "termMonths": 36,
+          "expirationDate": "2026-12-31"
+        }
+      }
+    }
+  ]
+}

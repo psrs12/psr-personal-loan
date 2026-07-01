@@ -41,6 +41,9 @@ public class ApplicantJpaEntity {
     @Column(name = "street", nullable = false)
     private String street;
 
+    @Column(name = "address_line2")
+    private String addressLine2;
+
     @Column(name = "city", nullable = false)
     private String city;
 
@@ -85,6 +88,8 @@ public class ApplicantJpaEntity {
     public void setPhone(String phone) { this.phone = phone; }
     public String getStreet() { return street; }
     public void setStreet(String street) { this.street = street; }
+    public String getAddressLine2() { return addressLine2; }
+    public void setAddressLine2(String addressLine2) { this.addressLine2 = addressLine2; }
     public String getCity() { return city; }
     public void setCity(String city) { this.city = city; }
     public String getState() { return state; }
