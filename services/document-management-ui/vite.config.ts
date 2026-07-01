@@ -7,7 +7,8 @@ export default defineConfig({
     lib: {
       entry: 'src/main.tsx',
       name: 'DocumentManagementUI',
-      fileName: (format) => `document-management-ui.${format}.js`,
+      formats: ['iife'],
+      fileName: () => 'document-upload-manager.iife.js',
     },
   },
   define: {

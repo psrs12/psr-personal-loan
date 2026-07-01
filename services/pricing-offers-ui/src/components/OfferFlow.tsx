@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { PricingOffer, OfferFlowStep } from '../types'
 import { usePricingOffers } from '../hooks/usePricingOffers'
 import OfferList from './OfferList'

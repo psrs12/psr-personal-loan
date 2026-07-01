@@ -7,7 +7,8 @@ export default defineConfig({
     lib: {
       entry: 'src/main.tsx',
       name: 'PricingOffersUI',
-      fileName: (format) => `pricing-offers-ui.${format}.js`,
+      formats: ['iife'],
+      fileName: () => 'pricing-offer-selector.iife.js',
     },
   },
   define: {

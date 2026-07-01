@@ -1,4 +1,3 @@
-import React from 'react'
 import { PricingOffer } from '../types'
 
 interface Props {

@@ -34,3 +34,5 @@ application-local.ymldeploy/.env
 
 node_modules/
 certs/
+dist/
+.vite/

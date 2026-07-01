@@ -42,7 +42,7 @@ echo ""
 
 for svc in "${ui_services[@]}"; do
   image="${IMAGE_REGISTRY_PREFIX}/${svc}:${IMAGE_TAG}"
-  context="${REPO_ROOT}/ui/${svc}"
+  context="${REPO_ROOT}/services/${svc}"
 
   echo "--- Building ${svc} ---"
 
