@@ -17,7 +17,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-REMOTE_DIR="/opt/personal-loan"
+REMOTE_DIR="/home/opc/personal-loan/deploy"
 
 echo "==> Uploading compose and config to ${ORACLE_VM_IP}"
 
