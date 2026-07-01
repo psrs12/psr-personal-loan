@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Application Management UI — Tabbed Redesign Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #E8520A;
+    --primary-dark: #C94A0A;
+    --accent: #0F2A4A;
+    --accent-soft: #EAF0F6;
+    --bg: #F4F5F7;
+    --surface: #FFFFFF;
+    --border: #E5E7EB;
+    --text: #1A1A1A;
+    --text-muted: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* ── Palette switcher toolbar ─────────────────────── */
+  .switcher {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #111827;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .switcher b { margin-right: 4px; }
+  .switcher button {
+    background: #1f2937;
+    border: 1px solid #374151;
+    color: #d1d5db;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .switcher button.active {
+    background: #fff;
+    color: #111827;
+    border-color: #fff;
+    font-weight: 700;
+  }
+  .swatch { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+  .layout-toggle { margin-left: auto; display: flex; gap: 8px; }
+
+  /* ── App header ────────────────────────────────────── */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    padding: 0 36px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .app-header .logo { font-size: 1.15rem; font-weight: 800; color: var(--primary); letter-spacing: -0.02em; }
+  .app-header .header-right { font-size: 0.82rem; color: var(--text-muted); }
+  .header-invitation-link {
+    background: none; border: none; color: #2563eb; font-size: 0.82rem; font-weight: 400;
+    cursor: pointer; padding: 0; white-space: nowrap; text-decoration: underline;
+    position: absolute; left: 50%; transform: translateX(-50%);
+  }
+  .header-invitation-link:hover { color: #1d4ed8; }
+
+  /* ── Invitation reveal panel ───────────────────────── */
+  .invitation-panel-wrapper {
+    background: var(--surface); border-bottom: 1px solid var(--border); overflow: hidden; display: none;
+  }
+  .invitation-panel-wrapper.open { display: block; }
+  .invitation-reveal {
+    display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 22px 24px 26px;
+  }
+  .invitation-code-input {
+    width: 100%; max-width: 480px; padding: 18px 24px; border: 1.5px solid #d1d5db; border-radius: 14px;
+    font-size: 1.2rem; letter-spacing: 0.18em; text-align: center; outline: none;
+  }
+  .invitation-code-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(232,82,10,0.1); }
+  .btn-apply-offer {
+    background: #fff; color: var(--primary); border: 2px solid var(--primary); border-radius: 30px;
+    padding: 12px 40px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  }
+  .btn-apply-offer:hover { background: var(--primary); color: #fff; }
+
+  /* ── Hero ──────────────────────────────────────────── */
+  .hero {
+    text-align: center;
+    padding: 40px 24px 8px;
+  }
+  .hero h1 { font-size: 2rem; font-weight: 800; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .hero h1 em { font-style: normal; color: var(--primary); }
+  .hero p { color: var(--text-muted); margin: 0; font-size: 0.95rem; }
+
+  .trust-strip {
+    display: flex; justify-content: center; gap: 26px; margin: 18px 0 30px; flex-wrap: wrap;
+  }
+  .trust-badge { display: flex; align-items: center; gap: 7px; font-size: 0.8rem; font-weight: 600; color: #374151; }
+  .trust-badge-icon {
+    width: 20px; height: 20px; border-radius: 50%; background: #fff;
+    border: 1.5px solid var(--primary); display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; color: var(--primary);
+  }
+
+  /* ── Layout container ─────────────────────────────── */
+  .shell-horizontal { max-width: 780px; margin: 0 auto; padding: 0 24px 80px; }
+  .shell-vertical { max-width: 980px; margin: 0 auto; padding: 0 24px 80px; display: flex; gap: 28px; }
+
+  /* ── Horizontal tabs ───────────────────────────────── */
+  .tabs-h {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 28px;
+    gap: 4px;
+  }
+  .tab-h {
+    padding: 14px 22px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color .15s, border-color .15s;
+    user-select: none;
+  }
+  .tab-h .num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--border); color: #fff; font-size: 0.68rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .tab-h.done .num { background: var(--primary); }
+  .tab-h.active { color: var(--text); border-color: var(--primary); }
+  .tab-h.active .num { background: var(--primary); }
+  .tab-h.locked { color: #c9ccd1; cursor: not-allowed; }
+  .tab-h.locked .num { background: #e5e7eb; color: #9ca3af; }
+
+  /* ── Vertical tabs (sidebar) ───────────────────────── */
+  .tabs-v {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-top: 4px;
+  }
+  .tab-v {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 16px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  .tab-v .num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--border); color: #fff; font-size: 0.7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .tab-v.done .num { background: var(--primary); }
+  .tab-v.active { background: var(--accent-soft); color: var(--accent); border-left-color: var(--primary); }
+  .tab-v.active .num { background: var(--primary); }
+  .tab-v.locked { color: #c9ccd1; cursor: not-allowed; }
+
+  .summary-card {
+    margin-top: 20px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .summary-card .label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: .06em; opacity: .7; margin-bottom: 4px; }
+  .summary-card .value { font-size: 1.5rem; font-weight: 800; margin-bottom: 14px; }
+  .summary-card .row { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.15); }
+
+  .tabs-v-content { flex: 1; min-width: 0; }
+
+  /* ── Section card ──────────────────────────────────── */
+  .section {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 30px 34px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  .section-title {
+    font-size: 1.02rem; font-weight: 700; margin-bottom: 22px; text-align: center;
+    padding-bottom: 14px; border-bottom: 2px solid var(--bg); position: relative;
+  }
+  .section-title::after {
+    content: ''; position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 2px; background: var(--primary); border-radius: 2px;
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 12px 14px; border: 1.5px solid #e0e2e6; border-radius: 8px;
+    font-size: 0.95rem; background: #fafafa; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(232,82,10,0.12);
+  }
+
+  .term-pills { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .term-pill {
+    flex: 1; min-width: 52px; padding: 10px 6px; border: 1.5px solid #d1d5db; border-radius: 8px;
+    background: #fff; font-size: 0.9rem; font-weight: 600; text-align: center; cursor: pointer;
+  }
+  .term-pill.selected { border-color: var(--primary); background: var(--primary); color: #fff; }
+
+  .review-block { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .review-row { display: flex; justify-content: space-between; padding: 12px 16px; font-size: 0.9rem; border-bottom: 1px solid #f3f4f6; }
+  .review-row:last-child { border-bottom: none; }
+  .review-row span:first-child { color: var(--text-muted); }
+  .review-row span:last-child { font-weight: 600; }
+  .review-group-label { font-size: 0.74rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; color: #9ca3af; margin: 18px 0 8px; }
+
+  .btn-row { display: flex; gap: 12px; }
+  .btn-primary {
+    background: var(--primary); color: #fff; border: none; border-radius: 30px;
+    padding: 14px 26px; font-size: 1rem; font-weight: 700; cursor: pointer; flex: 1;
+  }
+  .btn-back {
+    background: #fff; color: var(--text-muted); border: 1.5px solid #d1d5db; border-radius: 30px;
+    padding: 14px 22px; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+  }
+
+  .step-panel { display: none; }
+  .step-panel.active { display: block; }
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <b>Palette:</b>
+  <button data-palette="orange" class="active"><span class="swatch" style="background:#E8520A"></span>Current Orange</button>
+  <button data-palette="navy-gold"><span class="swatch" style="background:#0F2A4A"></span>Navy + Gold</button>
+  <button data-palette="indigo-teal"><span class="swatch" style="background:#4338CA"></span>Indigo + Teal</button>
+  <button data-palette="teal-coral"><span class="swatch" style="background:#0D6E6E"></span>Teal + Coral</button>
+  <button data-palette="orange-navy"><span class="swatch" style="background:#E8520A"></span>Orange + Navy accent</button>
+  <button data-palette="forest-cream"><span class="swatch" style="background:#1F6F4A"></span>Forest + Cream</button>
+  <button data-palette="slate-blue"><span class="swatch" style="background:#334155"></span>Slate + Electric Blue</button>
+  <button data-palette="plum-rosegold"><span class="swatch" style="background:#5B2A6E"></span>Plum + Rose Gold</button>
+  <button data-palette="charcoal-lime"><span class="swatch" style="background:#1A1A1A"></span>Charcoal + Lime</button>
+  <button data-palette="ocean-sand"><span class="swatch" style="background:#0E7490"></span>Ocean + Sand</button>
+  <button data-palette="capital-one"><span class="swatch" style="background:#153E75"></span>Capital One Navy + Blue</button>
+  <div class="layout-toggle">
+    <b>Layout:</b>
+    <button data-layout="h" class="active">Top tabs</button>
+    <button data-layout="v">Sidebar tabs</button>
+  </div>
+</div>
+
+<div class="app-header" style="position: relative;">
+  <div class="logo">Personal Loans</div>
+  <button type="button" class="header-invitation-link" id="invitation-toggle">✉ Have a Personal Invitation ID #?</button>
+  <div class="header-right">Questions? Call us (1-800-555-0100)</div>
+</div>
+
+<div class="invitation-panel-wrapper" id="invitation-panel">
+  <div class="invitation-reveal">
+    <input type="text" class="invitation-code-input" placeholder="_ _ _ _ _ _ _ _ _ _ _ _   _ _ _ _ _ _" spellcheck="false" />
+    <button type="button" class="btn-apply-offer">Apply Offer</button>
+  </div>
+</div>
+
+<div class="hero">
+  <h1>See if you <em>qualify</em> in minutes</h1>
+  <p>No commitment — check your rate with <strong>no impact to your credit score</strong></p>
+  <div class="trust-strip">
+    <div class="trust-badge"><div class="trust-badge-icon">✓</div>No credit score impact</div>
+    <div class="trust-badge"><div class="trust-badge-icon">⚡</div>Decision in 2 minutes</div>
+    <div class="trust-badge"><div class="trust-badge-icon">🔒</div>Bank-level security</div>
+  </div>
+</div>
+
+<!-- HORIZONTAL LAYOUT -->
+<div class="shell-horizontal" id="layout-h">
+  <div class="tabs-h">
+    <div class="tab-h active" data-step="1"><span class="num">1</span>Personal Info</div>
+    <div class="tab-h locked" data-step="2"><span class="num">2</span>Employment Info</div>
+    <div class="tab-h locked" data-step="3"><span class="num">3</span>Review</div>
+  </div>
+  <div id="content-h"></div>
+</div>
+
+<!-- VERTICAL LAYOUT -->
+<div class="shell-vertical" id="layout-v" style="display:none">
+  <div class="tabs-v">
+    <div class="tab-v active" data-step="1"><span class="num">1</span>Personal Info</div>
+    <div class="tab-v locked" data-step="2"><span class="num">2</span>Employment Info</div>
+    <div class="tab-v locked" data-step="3"><span class="num">3</span>Review</div>
+    <div class="summary-card">
+      <div class="label">Requested amount</div>
+      <div class="value">$15,000</div>
+      <div class="row"><span>Term</span><span>60 mo</span></div>
+      <div class="row"><span>Purpose</span><span>Debt Consolidation</span></div>
+    </div>
+  </div>
+  <div class="tabs-v-content" id="content-v"></div>
+</div>
+
+<script>
+const palettes = {
+  orange:      { primary: '#E8520A', primaryDark: '#C94A0A', accent: '#0F2A4A', accentSoft: '#FFF5EF' },
+  'navy-gold': { primary: '#B8842E', primaryDark: '#9C6F26', accent: '#0F2A4A', accentSoft: '#EAF0F6' },
+  'indigo-teal': { primary: '#4338CA', primaryDark: '#362DA0', accent: '#0F766E', accentSoft: '#ECFEFF' },
+  'teal-coral': { primary: '#F2704A', primaryDark: '#D95C38', accent: '#0D6E6E', accentSoft: '#E6F5F5' },
+  'orange-navy': { primary: '#E8520A', primaryDark: '#C94A0A', accent: '#0F2A4A', accentSoft: '#EAF0F6' },
+  'forest-cream': { primary: '#1F6F4A', primaryDark: '#195A3B', accent: '#8A5A12', accentSoft: '#FBF3E0' },
+  'slate-blue': { primary: '#2563EB', primaryDark: '#1D4ED8', accent: '#334155', accentSoft: '#EEF2F7' },
+  'plum-rosegold': { primary: '#5B2A6E', primaryDark: '#4A2259', accent: '#B4653F', accentSoft: '#F7ECE6' },
+  'charcoal-lime': { primary: '#4D7C0F', primaryDark: '#3F6710', accent: '#1A1A1A', accentSoft: '#F2F7E8' },
+  'ocean-sand': { primary: '#0E7490', primaryDark: '#0C6178', accent: '#B5843C', accentSoft: '#EAF6F8' },
+  'capital-one': { primary: '#153E75', primaryDark: '#102E58', accent: '#0072CE', accentSoft: '#DCEAEA', font: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" },
+};
+
+const defaultFont = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+function applyPalette(key) {
+  const p = palettes[key];
+  const root = document.documentElement.style;
+  root.setProperty('--primary', p.primary);
+  root.setProperty('--primary-dark', p.primaryDark);
+  root.setProperty('--accent', p.accent);
+  root.setProperty('--accent-soft', p.accentSoft);
+  document.body.style.fontFamily = p.font || defaultFont;
+  document.querySelectorAll('.switcher button[data-palette]').forEach(b =>
+    b.classList.toggle('active', b.dataset.palette === key));
+}
+
+document.querySelectorAll('.switcher button[data-palette]').forEach(b =>
+  b.addEventListener('click', () => applyPalette(b.dataset.palette)));
+
+document.getElementById('invitation-toggle').addEventListener('click', () => {
+  document.getElementById('invitation-panel').classList.toggle('open');
+});
+
+document.querySelectorAll('.switcher button[data-layout]').forEach(b =>
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.switcher button[data-layout]').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    const h = b.dataset.layout === 'h';
+    document.getElementById('layout-h').style.display = h ? 'block' : 'none';
+    document.getElementById('layout-v').style.display = h ? 'none' : 'flex';
+  }));
+
+const stepHTML = {
+  1: `
+    <div class="section">
+      <div class="section-title">Let's start with some information about your loan</div>
+      <div class="form-row">
+        <div class="form-group"><label>How much do you need?</label><input value="15,000" /></div>
+        <div class="form-group"><label>What's the purpose?</label><select><option>Debt Consolidation</option></select></div>
+      </div>
+      <div class="form-group">
+        <label>What's the loan term? (months)</label>
+        <div class="term-pills">
+          <div class="term-pill">36</div><div class="term-pill selected">48</div>
+          <div class="term-pill">60</div><div class="term-pill">72</div><div class="term-pill">84</div>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">Next, a few details about you</div>
+      <div class="form-row">
+        <div class="form-group"><label>First Name</label><input value="Jane" /></div>
+        <div class="form-group"><label>Last Name</label><input value="Smith" /></div>
+      </div>
+      <div class="form-group"><label>Street Address</label><input value="47 W 5th St" /></div>
+      <div class="form-row-3">
+        <div class="form-group"><label>City</label><input value="Tulsa" /></div>
+        <div class="form-group"><label>State</label><select><option>OK</option></select></div>
+        <div class="form-group"><label>ZIP</label><input value="74103" /></div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn-primary" style="width:100%" data-nav="2">Continue</button></div>
+  `,
+  2: `
+    <div class="section">
+      <div class="section-title">Tell us about your employment &amp; income</div>
+      <div class="form-row">
+        <div class="form-group"><label>Date of Birth</label><input value="1990-04-12" /></div>
+        <div class="form-group"><label>Social Security Number</label><input value="•••-••-1234" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Employment Type</label><select><option>Full Time</option></select></div>
+        <div class="form-group"><label>Employer Name</label><input value="Acme Corp" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Annual Income ($)</label><input value="65,000" /></div>
+        <div class="form-group"><label>Monthly Obligations ($)</label><input value="800" /></div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn-back" data-nav="1">← Back</button><button class="btn-primary" data-nav="3">Continue</button></div>
+  `,
+  3: `
+    <div class="section">
+      <div class="section-title">Review your application</div>
+      <div class="review-group-label">Loan Details</div>
+      <div class="review-block">
+        <div class="review-row"><span>Loan Amount</span><span>$15,000</span></div>
+        <div class="review-row"><span>Term</span><span>48 months</span></div>
+      </div>
+      <div class="review-group-label">Personal Details</div>
+      <div class="review-block">
+        <div class="review-row"><span>Name</span><span>Jane Smith</span></div>
+        <div class="review-row"><span>Address</span><span>47 W 5th St, Tulsa, OK 74103</span></div>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn-back" data-nav="2">← Back</button><button class="btn-primary" data-nav="submit">Submit Application</button></div>
+  `,
+};
+
+let furthestStep = 1;
+
+function renderStep(n) {
+  document.getElementById('content-h').innerHTML = stepHTML[n];
+  document.getElementById('content-v').innerHTML = stepHTML[n];
+  wireNavButtons();
+}
+
+function wireTabs() {
+  document.querySelectorAll('.tab-h, .tab-v').forEach(t => {
+    t.onclick = null;
+    if (!t.classList.contains('locked')) {
+      t.addEventListener('click', () => goToStep(Number(t.dataset.step)));
+    }
+  });
+}
+
+function wireNavButtons() {
+  document.querySelectorAll('button[data-nav]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (b.dataset.nav === 'submit') {
+        alert('Application submitted (mockup only — no real submission).');
+        return;
+      }
+      goToStep(Number(b.dataset.nav));
+    });
+  });
+}
+
+function goToStep(n) {
+  if (n > furthestStep) furthestStep = n;
+  document.querySelectorAll('.tab-h, .tab-v').forEach(t => {
+    const s = Number(t.dataset.step);
+    t.classList.toggle('active', s === n);
+    t.classList.toggle('done', s < n);
+    t.classList.toggle('locked', s > furthestStep);
+  });
+  renderStep(n);
+  wireTabs();
+  window.scrollTo(0, 0);
+}
+
+renderStep(1);
+wireTabs();
+</script>
+
+</body>
+</html>
