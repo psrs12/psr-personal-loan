@@ -1,6 +1,7 @@
 package com.personalloan.applicationmanagement.application.application;
 
 import com.personalloan.applicationmanagement.domain.application.*;
+import com.personalloan.applicationmanagement.domain.application.Citizenship;
 import com.personalloan.applicationmanagement.domain.application.port.*;
 import com.personalloan.applicationmanagement.domain.exception.IntakeExpiredException;
 import com.personalloan.applicationmanagement.domain.exception.IntakeNotFoundException;
@@ -53,11 +54,10 @@ public class CreateApplicationUseCase {
 
     @Transactional
     public UUID execute(CreateApplicationCommand command) {
-        validateSsnToken(command.ssnVerificationToken());
-
         Application application;
 
         if (command.intakeId() != null) {
+            validateSsnToken(command.ssnVerificationToken());
             application = createFromITAIntake(command);
         } else {
             application = createDirect(command);
@@ -111,10 +111,12 @@ public class CreateApplicationUseCase {
     }
 
     private void persistApplicant(UUID applicationId, CreateApplicationCommand command) {
-        String ssnToken = boltTokenizationPort.tokenize(command.ssn());
+        String rawSsn = command.ssn() != null ? command.ssn() : "";
+        String ssnToken = boltTokenizationPort.tokenize(rawSsn);
+        Citizenship citizenship = command.citizenship() != null ? command.citizenship() : Citizenship.US_CITIZEN;
         Applicant applicant = Applicant.create(
                 applicationId, command.firstName(), command.lastName(), command.dateOfBirth(),
-                command.citizenship(), ssnToken, command.email(), command.phone(),
+                citizenship, ssnToken, command.email(), command.phone(),
                 command.street(), command.city(), command.state(), command.zip(),
                 command.employerName(), command.employmentStatus(), command.annualIncome()
         );

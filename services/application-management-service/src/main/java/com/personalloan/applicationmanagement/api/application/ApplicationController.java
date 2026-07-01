@@ -38,7 +38,7 @@ public class ApplicationController {
     @PostMapping
     public ResponseEntity<CreateApplicationResponse> create(
             @RequestHeader("X-Channel-ID") String channelId,
-            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @Valid @RequestBody CreateApplicationRequest request) {
 
         CreateApplicationCommand command = new CreateApplicationCommand(

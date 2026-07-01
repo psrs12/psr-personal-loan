@@ -11,13 +11,13 @@ import java.util.UUID;
 public record CreateApplicationRequest(
         UUID intakeId,
 
-        @NotBlank String ssnVerificationToken,
-        @NotBlank @Pattern(regexp = "\\d{9}", message = "SSN must be 9 digits") String ssn,
+        String ssnVerificationToken,
+        @Pattern(regexp = "\\d{9}", message = "SSN must be 9 digits") String ssn,
 
         @NotBlank String firstName,
         @NotBlank String lastName,
-        @NotNull LocalDate dateOfBirth,
-        @NotNull Citizenship citizenship,
+        LocalDate dateOfBirth,
+        Citizenship citizenship,
 
         @NotBlank String email,
         @NotBlank String phone,

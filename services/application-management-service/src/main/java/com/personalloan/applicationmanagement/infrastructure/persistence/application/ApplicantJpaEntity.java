@@ -23,13 +23,13 @@ public class ApplicantJpaEntity {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "date_of_birth", nullable = false)
+    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
     @Column(name = "citizenship", nullable = false)
     private String citizenship;
 
-    @Column(name = "ssn_token", nullable = false)
+    @Column(name = "ssn_token")
     private String ssnToken;
 
     @Column(name = "email", nullable = false)

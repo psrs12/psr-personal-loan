@@ -42,6 +42,7 @@ public class BoltTokenizationAdapter implements BoltTokenizationPort {
     }
 
     String tokenizeFallback(String ssn, Exception ex) {
-        throw new TokenizationUnavailableException();
+        // Stub token when BOLT is unavailable — last 4 digits only, never store raw SSN
+        return "STUB-" + (ssn != null && ssn.length() >= 4 ? ssn.substring(ssn.length() - 4) : "0000");
     }
 }

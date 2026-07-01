@@ -208,7 +208,7 @@ export default function ApplyPage() {
       };
       const contact = { phone: form.phone, email: form.email };
       const payload = isITA
-        ? { applicationSource: 'INVITATION', invitationToken, firstName: form.firstName, lastName: form.lastName, address, ...contact, offerId: prefill.offerId, campaignOfferId: prefill.campaignOfferId, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment }
+        ? { applicationSource: 'INVITATION', intakeId: prefill.intakeId, firstName: form.firstName, lastName: form.lastName, address, ...contact, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment }
         : { applicationSource: 'DIRECT', firstName: form.firstName, lastName: form.lastName, dateOfBirth: form.dateOfBirth, ssn: form.ssn, address, ...contact, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment };
       await createApplication(payload);
       navigate('/portal/login');

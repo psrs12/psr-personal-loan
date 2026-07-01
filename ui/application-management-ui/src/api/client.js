@@ -35,12 +35,48 @@ export async function validateInvitation(token) {
 }
 
 export async function createApplication(payload) {
+  const isITA = payload.applicationSource === 'INVITATION';
+  const channelId = isITA ? 'ITA' : 'WEB';
+
+  const body = {
+    intakeId: payload.intakeId ?? null,
+    ssnVerificationToken: payload.ssnVerificationToken ?? null,
+    ssn: payload.ssn ? payload.ssn.replace(/\D/g, '') : null,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    dateOfBirth: payload.dateOfBirth ?? null,
+    citizenship: payload.citizenship ?? 'US_CITIZEN',
+    email: payload.email,
+    phone: payload.phone,
+    street: payload.address?.line1 ?? payload.street,
+    city: payload.address?.city ?? payload.city,
+    state: payload.address?.state ?? payload.state,
+    zip: payload.address?.postcode ?? payload.zip,
+    employerName: payload.employerName ?? null,
+    employmentStatus: mapEmploymentStatus(payload.employmentType ?? payload.employmentStatus),
+    annualIncome: payload.annualIncome,
+    requestedAmount: payload.requestedAmount,
+    termMonths: payload.requestedTermMonths ?? payload.termMonths,
+    loanPurpose: payload.loanPurpose,
+  };
+
   const res = await fetch(`${API.appManagement}/applications`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json', 'X-Channel-ID': channelId },
+    body: JSON.stringify(body),
   });
   return handleResponse(res);
+}
+
+function mapEmploymentStatus(type) {
+  switch (type) {
+    case 'FULL_TIME':
+    case 'PART_TIME':
+    case 'CONTRACT': return 'EMPLOYED';
+    case 'SELF_EMPLOYED': return 'SELF_EMPLOYED';
+    case 'RETIRED': return 'RETIRED';
+    default: return 'OTHER';
+  }
 }
 
 export async function login(applicationId, last4SSN, dateOfBirth) {

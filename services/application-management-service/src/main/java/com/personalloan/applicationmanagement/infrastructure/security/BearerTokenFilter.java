@@ -17,7 +17,9 @@ public class BearerTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
-        if (path.contains("/actuator") || path.endsWith("/login") || path.contains("/invitations")) {
+        boolean isPost = "POST".equalsIgnoreCase(request.getMethod());
+        boolean isApplicationIntake = isPost && path.matches(".*/applications/?$");
+        if (path.contains("/actuator") || path.endsWith("/login") || path.contains("/invitations") || isApplicationIntake) {
             filterChain.doFilter(request, response);
             return;
         }
