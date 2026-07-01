@@ -224,83 +224,170 @@ p {
   margin-bottom: 20px;
 }
 
-/* Tab bar */
-.tab-bar {
+/* Invitation section */
+.invitation-section {
+  margin-bottom: 4px;
+}
+
+.invitation-row {
   display: flex;
-  gap: 0;
-  margin-bottom: 28px;
-  border-bottom: 2px solid #d0dae8;
+  gap: 10px;
+  align-items: stretch;
 }
 
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
-  padding: 12px 20px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #7a8ea8;
-  cursor: default;
-  transition: color 0.15s;
+.invitation-row input {
+  flex: 1;
+  padding: 11px 14px;
+  border: 1px solid #b0bec5;
+  border-radius: 5px;
+  font-size: 0.97rem;
+  color: #1a2332;
 }
 
-.tab-btn.active {
-  color: #1565c0;
-  border-bottom-color: #1565c0;
+.invitation-row input:focus {
+  outline: none;
+  border-color: #1565c0;
+  box-shadow: 0 0 0 3px rgba(21,101,192,0.12);
 }
 
-.tab-btn:not(.active):not(.disabled) {
-  color: #2d3f55;
-  cursor: pointer;
-}
-
-.tab-btn:not(.active):not(.disabled):hover {
-  color: #1565c0;
-}
-
-.tab-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  font-size: 0.78rem;
-  font-weight: 700;
-  background: #d0dae8;
-  color: #5a6a7e;
-}
-
-.tab-btn.active .tab-number {
-  background: #1565c0;
-  color: #fff;
-}
-
-/* Tab navigation actions */
-.tab-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 28px;
-  padding-top: 20px;
-  border-top: 1px solid #e0e8f0;
-}
-
-.btn-back {
-  background: transparent;
+.btn-secondary {
+  background: #fff;
   color: #1565c0;
   border: 1px solid #1565c0;
   border-radius: 5px;
-  padding: 11px 22px;
+  padding: 11px 20px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
 }
 
-.btn-back:hover {
+.btn-secondary:hover:not(:disabled) {
   background: #e8f0fe;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 3-column address row */
+@media (max-width: 560px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Offer summary tile */
+.offer-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.offer-summary-item {
+  background: #f5f8ff;
+  border: 1px solid #c5d5ea;
+  border-radius: 7px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.offer-summary-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #7a8ea8;
+  font-weight: 700;
+}
+
+.offer-summary-value {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0d47a1;
+}
+
+/* Declarations */
+.declarations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.declaration-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: #f9fbff;
+  border: 1px solid #d0dae8;
+  border-radius: 6px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.declaration-item--checked {
+  background: #e8f0fe;
+  border-color: #1565c0;
+}
+
+.declaration-checkbox {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: #1565c0;
+  cursor: pointer;
+}
+
+.declaration-body {
+  flex: 1;
+}
+
+.declaration-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1a2332;
+  margin-bottom: 4px;
+}
+
+.declaration-required {
+  color: #b71c1c;
+  font-weight: 700;
+  margin-right: 5px;
+}
+
+.declaration-text {
+  font-size: 0.88rem;
+  color: #5a6a7e;
+  line-height: 1.55;
+}
+
+/* E-sign success */
+.esign-success {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f0faf4;
+  border: 1px solid #a5d6a7;
+  border-radius: 8px;
+}
+
+.esign-success-icon {
+  font-size: 3rem;
+  color: #1b5e20;
+  margin-bottom: 12px;
+}
+
+.esign-success h3 {
+  color: #1b5e20;
+  margin-bottom: 8px;
+}
+
+.esign-success p {
+  color: #5a6a7e;
+  margin: 0;
 }

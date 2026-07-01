@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { getDeclarations, submitESign } from '../api/client.js';
 
-export default function OfferAcceptanceMfe({ applicationId }) {
+function fmt(value, prefix = '') {
+  if (value === null || value === undefined) return '—';
+  return prefix + Number(value).toLocaleString();
+}
+
+export default function OfferAcceptanceMfe({ applicationId, application }) {
   const [declarations, setDeclarations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -16,7 +21,7 @@ export default function OfferAcceptanceMfe({ applicationId }) {
         const list = Array.isArray(data) ? data : (data.declarations ?? []);
         setDeclarations(list);
         const initial = {};
-        list.forEach(d => { initial[d.id] = false; });
+        list.forEach(d => { initial[d.declarationId ?? d.id] = false; });
         setChecked(initial);
       })
       .catch(e => setError(e.message))
@@ -29,7 +34,7 @@ export default function OfferAcceptanceMfe({ applicationId }) {
 
   const mandatoryAll = declarations
     .filter(d => d.mandatory)
-    .every(d => checked[d.id]);
+    .every(d => checked[d.declarationId ?? d.id]);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -48,70 +53,111 @@ export default function OfferAcceptanceMfe({ applicationId }) {
     }
   }
 
-  if (loading) return <div className="alert-info">Loading declarations...</div>;
-  if (error) return <div className="alert-error">{error}</div>;
-
-  if (submitted) {
-    return (
-      <div style={{ textAlign: 'center', padding: '40px 0' }}>
-        <div style={{ fontSize: '3rem', color: '#1b5e20', marginBottom: 12 }}>✓</div>
-        <h3 style={{ color: '#1b5e20' }}>E-Signature Submitted</h3>
-        <p style={{ color: '#5a6a7e' }}>Your offer has been accepted. Your application is now being finalised.</p>
-      </div>
-    );
-  }
+  // Loan details from application aggregate
+  const loan = application?.loanRequest ?? {};
+  const amount = loan.requestedAmount ?? application?.requestedAmount;
+  const term = loan.requestedTermMonths ?? loan.term ?? application?.requestedTermMonths;
+  const purpose = loan.loanPurpose ?? application?.loanPurpose;
+  const apr = application?.offeredApr ?? application?.apr ?? null;
+  const monthlyPayment = application?.monthlyPayment ?? null;
 
   return (
-    <form onSubmit={handleSubmit}>
-      <p style={{ color: '#5a6a7e', marginBottom: 24 }}>
-        Please read and accept the declarations below to complete your loan offer acceptance.
-        All mandatory declarations must be accepted to proceed.
-      </p>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 28 }}>
-        {declarations.map(d => (
-          <label
-            key={d.id}
-            style={{
-              display: 'flex',
-              gap: 14,
-              alignItems: 'flex-start',
-              background: '#f5f8ff',
-              border: '1px solid #c5d5ea',
-              borderRadius: 6,
-              padding: '14px 16px',
-              cursor: 'pointer',
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={!!checked[d.id]}
-              onChange={() => toggle(d.id)}
-              style={{ marginTop: 3, flexShrink: 0, width: 18, height: 18, accentColor: '#1565c0' }}
-            />
-            <span style={{ fontSize: '0.93rem', lineHeight: 1.6, color: '#2d3f55' }}>
-              {d.mandatory && (
-                <span style={{ color: '#b71c1c', fontWeight: 700, marginRight: 6 }}>*</span>
-              )}
-              {d.text ?? d.description ?? d.content}
-            </span>
-          </label>
-        ))}
+    <div>
+      {/* Offer summary */}
+      <div className="section-label">Your Approved Offer</div>
+      <div className="offer-summary">
+        <div className="offer-summary-item">
+          <span className="offer-summary-label">Loan Amount</span>
+          <span className="offer-summary-value">{fmt(amount, '$')}</span>
+        </div>
+        <div className="offer-summary-item">
+          <span className="offer-summary-label">Term</span>
+          <span className="offer-summary-value">{term ? `${term} months` : '—'}</span>
+        </div>
+        {apr !== null && (
+          <div className="offer-summary-item">
+            <span className="offer-summary-label">APR</span>
+            <span className="offer-summary-value">{apr}%</span>
+          </div>
+        )}
+        {monthlyPayment !== null && (
+          <div className="offer-summary-item">
+            <span className="offer-summary-label">Monthly Payment</span>
+            <span className="offer-summary-value">{fmt(monthlyPayment, '$')}</span>
+          </div>
+        )}
+        {purpose && (
+          <div className="offer-summary-item">
+            <span className="offer-summary-label">Purpose</span>
+            <span className="offer-summary-value">{String(purpose).replace(/_/g, ' ')}</span>
+          </div>
+        )}
       </div>
 
-      <p style={{ fontSize: '0.82rem', color: '#7a8ea8', marginBottom: 16 }}>
-        * Mandatory declarations must be accepted.
-      </p>
+      <hr className="divider" />
 
-      {submitError && <div className="alert-error">{submitError}</div>}
+      {/* E-sign section */}
+      <div className="section-label">Declarations &amp; E-Signature</div>
 
-      <button
-        type="submit"
-        className="btn-primary"
-        disabled={!mandatoryAll || submitting}
-      >
-        {submitting ? 'Submitting...' : 'Accept and Sign'}
-      </button>
-    </form>
+      {submitted ? (
+        <div className="esign-success">
+          <div className="esign-success-icon">✓</div>
+          <h3>E-Signature Submitted</h3>
+          <p>Your offer has been accepted. Your application is now being finalised.</p>
+        </div>
+      ) : (
+        <>
+          <p style={{ color: '#5a6a7e', fontSize: '0.93rem', marginBottom: 20 }}>
+            Please read and accept all mandatory declarations below to complete your loan offer acceptance.
+            Items marked <strong style={{ color: '#b71c1c' }}>*</strong> are required.
+          </p>
+
+          {loading && <div className="alert-info">Loading declarations...</div>}
+          {error && <div className="alert-error">{error}</div>}
+
+          {!loading && !error && (
+            <form onSubmit={handleSubmit}>
+              <div className="declarations-list">
+                {declarations.map(d => {
+                  const id = d.declarationId ?? d.id;
+                  return (
+                    <label key={id} className={`declaration-item${checked[id] ? ' declaration-item--checked' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={!!checked[id]}
+                        onChange={() => toggle(id)}
+                        className="declaration-checkbox"
+                      />
+                      <div className="declaration-body">
+                        {d.title && (
+                          <div className="declaration-title">
+                            {d.mandatory && <span className="declaration-required">*</span>}
+                            {d.title}
+                          </div>
+                        )}
+                        <div className="declaration-text">
+                          {d.text ?? d.content ?? d.description}
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+
+              {submitError && <div className="alert-error" style={{ marginTop: 16 }}>{submitError}</div>}
+
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={!mandatoryAll || submitting}
+                style={{ marginTop: 24 }}
+              >
+                {submitting ? 'Submitting…' : 'Accept and Sign'}
+              </button>
+            </form>
+          )}
+        </>
+      )}
+    </div>
   );
 }
