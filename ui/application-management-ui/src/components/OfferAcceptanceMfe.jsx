@@ -107,7 +107,7 @@ export default function OfferAcceptanceMfe({ applicationId, application }) {
         </div>
       ) : (
         <>
-          <p style={{ color: '#5a6a7e', fontSize: '0.93rem', marginBottom: 20 }}>
+          <p style={{ color: '#6b7280', fontSize: '0.93rem', marginBottom: 20 }}>
             Please read and accept all mandatory declarations below to complete your loan offer acceptance.
             Items marked <strong style={{ color: '#b71c1c' }}>*</strong> are required.
           </p>

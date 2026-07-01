@@ -9,11 +9,11 @@ const STATUS_LABEL = {
 };
 
 const STATUS_COLOR = {
-  PENDING: '#7a8ea8',
-  UPLOADED: '#1565c0',
-  SCANNING: '#e65100',
-  COMPLETED: '#1b5e20',
-  REJECTED: '#b71c1c',
+  PENDING: '#9ca3af',
+  UPLOADED: '#e8520a',
+  SCANNING: '#c94a0a',
+  COMPLETED: '#15803d',
+  REJECTED: '#b91c1c',
 };
 
 class DocumentUploadManager extends LitElement {
@@ -31,8 +31,8 @@ class DocumentUploadManager extends LitElement {
   static styles = css`
     :host {
       display: block;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #1a2332;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: #1a1a1a;
     }
 
     .shell {
@@ -43,24 +43,25 @@ class DocumentUploadManager extends LitElement {
     h2 {
       margin: 0 0 6px;
       font-size: 1.4rem;
-      color: #0d47a1;
+      font-weight: 700;
+      color: #1a1a1a;
     }
 
     .subtitle {
       margin: 0 0 24px;
-      color: #5a6a7e;
+      color: #6b7280;
       font-size: 0.95rem;
     }
 
     .progress-bar-track {
-      background: #d0dae8;
+      background: #e5e7eb;
       border-radius: 999px;
       height: 10px;
       margin-bottom: 6px;
     }
 
     .progress-bar-fill {
-      background: #1565c0;
+      background: #e8520a;
       border-radius: 999px;
       height: 10px;
       transition: width 0.4s ease;
@@ -68,14 +69,14 @@ class DocumentUploadManager extends LitElement {
 
     .progress-label {
       font-size: 0.85rem;
-      color: #5a6a7e;
+      color: #6b7280;
       margin-bottom: 28px;
     }
 
     .req-card {
       background: #fff;
-      border: 1px solid #d0dae8;
-      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
       padding: 20px 24px;
       margin-bottom: 16px;
     }
@@ -88,16 +89,17 @@ class DocumentUploadManager extends LitElement {
     }
 
     .req-type {
-      font-weight: 600;
+      font-weight: 700;
       font-size: 1rem;
+      color: #1a1a1a;
     }
 
     .status-badge {
-      font-size: 0.8rem;
-      font-weight: 600;
+      font-size: 0.78rem;
+      font-weight: 700;
       padding: 3px 10px;
       border-radius: 999px;
-      background: #f0f4fa;
+      background: #f9fafb;
     }
 
     .upload-row {
@@ -111,28 +113,33 @@ class DocumentUploadManager extends LitElement {
       flex: 1;
       min-width: 200px;
       font-size: 0.9rem;
-      color: #2d3f55;
+      color: #374151;
     }
 
     button.upload-btn {
-      background: #1565c0;
+      background: #e8520a;
       color: #fff;
       border: none;
-      border-radius: 5px;
-      padding: 9px 20px;
+      border-radius: 30px;
+      padding: 9px 22px;
       font-size: 0.9rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
+      transition: background 0.15s;
+    }
+
+    button.upload-btn:hover:not(:disabled) {
+      background: #c94a0a;
     }
 
     button.upload-btn:disabled {
-      background: #90aad0;
+      background: #f5c4ae;
       cursor: not-allowed;
     }
 
     .upload-error {
-      color: #b71c1c;
+      color: #b91c1c;
       font-size: 0.85rem;
       margin-top: 8px;
     }
@@ -140,7 +147,7 @@ class DocumentUploadManager extends LitElement {
     .all-done {
       text-align: center;
       padding: 48px 0;
-      color: #1b5e20;
+      color: #15803d;
     }
 
     .all-done-icon {
@@ -151,21 +158,21 @@ class DocumentUploadManager extends LitElement {
     .loading-msg {
       text-align: center;
       padding: 40px 0;
-      color: #5a6a7e;
+      color: #6b7280;
     }
 
     .global-error {
-      color: #b71c1c;
+      color: #b91c1c;
       background: #fff5f5;
-      border: 1px solid #f5c6cb;
-      border-radius: 5px;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
       padding: 12px 16px;
       margin-bottom: 20px;
     }
 
     .req-meta {
       font-size: 0.82rem;
-      color: #7a8ea8;
+      color: #9ca3af;
       margin-bottom: 10px;
     }
   `;
@@ -275,7 +282,7 @@ class DocumentUploadManager extends LitElement {
     const uploadError = this._uploadErrors[docType];
     const isDone = req.status === 'COMPLETED';
     const isRejected = req.status === 'REJECTED';
-    const statusColor = STATUS_COLOR[req.status] ?? '#7a8ea8';
+    const statusColor = STATUS_COLOR[req.status] ?? '#9ca3af';
 
     return html`
       <div class="req-card">
@@ -293,12 +300,12 @@ class DocumentUploadManager extends LitElement {
               ?disabled=${isUploading}
               @change=${(e) => this._handleFileChange(req, e)}
             />
-            ${isUploading ? html`<span style="color:#5a6a7e;font-size:0.9rem">Uploading...</span>` : ''}
+            ${isUploading ? html`<span style="color:#6b7280;font-size:0.9rem">Uploading...</span>` : ''}
           </div>
           ${isRejected ? html`<div class="upload-error">Your previous upload was rejected. Please upload a new file.</div>` : ''}
           ${uploadError ? html`<div class="upload-error">${uploadError}</div>` : ''}
         ` : html`
-          <div style="color:#1b5e20;font-size:0.9rem;font-weight:600">Document received and verified.</div>
+          <div style="color:#15803d;font-size:0.9rem;font-weight:600">Document received and verified.</div>
         `}
       </div>
     `;
@@ -308,8 +315,8 @@ class DocumentUploadManager extends LitElement {
     return html`
       <div class="all-done">
         <div class="all-done-icon">✓</div>
-        <h2 style="color:#1b5e20">All documents submitted — thank you.</h2>
-        <p style="color:#5a6a7e">Your documents are being reviewed. We will update you on the progress of your application.</p>
+        <h2 style="color:#15803d">All documents submitted — thank you.</h2>
+        <p style="color:#6b7280">Your documents are being reviewed. We will update you on the progress of your application.</p>
       </div>
     `;
   }

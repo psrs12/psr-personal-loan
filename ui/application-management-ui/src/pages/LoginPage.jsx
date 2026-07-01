@@ -33,8 +33,12 @@ export default function LoginPage() {
     <div className="page-shell">
       <Header />
       <div className="card">
-        <h2>Access Your Application</h2>
-        <p className="card-subtitle">Enter your application details to check your status and complete next steps.</p>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ width: 54, height: 54, borderRadius: '50%', background: '#fff5f0', border: '2px solid #fbd5c0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', margin: '0 auto 14px' }}>🔒</div>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: 6 }}>Welcome back</h2>
+          <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: 0 }}>Enter your details to securely check your application status.</p>
+        </div>
+        <hr style={{ border: 'none', borderTop: '1px solid #f0f1f3', margin: '0 0 22px' }} />
 
         {error && <div className="alert-error">{error}</div>}
 
@@ -80,8 +84,8 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p style={{ marginTop: 20, fontSize: '0.85rem', color: '#7a8ea8', textAlign: 'center' }}>
-          Your session is encrypted and expires after 30 minutes.
+        <p style={{ marginTop: 20, fontSize: '0.82rem', color: '#9ca3af', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span>🔒</span> Your session is encrypted and expires after 30 minutes.
         </p>
       </div>
     </div>

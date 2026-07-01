@@ -17,15 +17,15 @@ class PricingOfferSelector extends LitElement {
   static styles = css`
     :host {
       display: block;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #1a2332;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: #1a1a1a;
     }
 
     .card {
       background: #fff;
-      border: 1px solid #d0dae8;
-      border-radius: 8px;
-      padding: 32px;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 32px 36px;
       max-width: 720px;
       margin: 0 auto;
     }
@@ -33,30 +33,31 @@ class PricingOfferSelector extends LitElement {
     h2 {
       margin: 0 0 8px;
       font-size: 1.4rem;
-      color: #0d47a1;
+      font-weight: 700;
+      color: #1a1a1a;
     }
 
     .subtitle {
       margin: 0 0 28px;
-      color: #5a6a7e;
+      color: #6b7280;
       font-size: 0.95rem;
     }
 
     .waiting {
       text-align: center;
       padding: 48px 0;
-      color: #5a6a7e;
+      color: #6b7280;
     }
 
     .spinner {
       display: inline-block;
-      width: 36px;
-      height: 36px;
-      border: 3px solid #d0dae8;
-      border-top-color: #1565c0;
+      width: 44px;
+      height: 44px;
+      border: 3px solid #e5e7eb;
+      border-top-color: #e8520a;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 16px;
+      animation: spin 0.85s linear infinite;
+      margin-bottom: 20px;
     }
 
     @keyframes spin {
@@ -74,71 +75,77 @@ class PricingOfferSelector extends LitElement {
       grid-template-columns: 1fr 1fr 1fr 1fr auto;
       align-items: center;
       gap: 16px;
-      background: #f5f8ff;
-      border: 1px solid #c5d5ea;
+      background: #fff8f5;
+      border: 1px solid #fbd5c0;
       border-radius: 6px;
       padding: 16px 20px;
+      transition: border-color 0.15s, background 0.15s;
     }
 
     .offer-row:hover {
-      border-color: #1565c0;
-      background: #eef3fc;
+      border-color: #e8520a;
+      background: #fff3ee;
     }
 
     .label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #7a8ea8;
+      letter-spacing: 0.07em;
+      color: #9ca3af;
+      font-weight: 700;
       margin-bottom: 4px;
     }
 
     .value {
       font-size: 1.05rem;
-      font-weight: 600;
-      color: #1a2332;
+      font-weight: 700;
+      color: #e8520a;
     }
 
     button.select {
-      background: #1565c0;
+      background: #e8520a;
       color: #fff;
       border: none;
-      border-radius: 5px;
-      padding: 10px 20px;
+      border-radius: 30px;
+      padding: 10px 22px;
       font-size: 0.9rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
+      transition: background 0.15s;
     }
 
     button.select:hover {
-      background: #0d47a1;
+      background: #c94a0a;
     }
 
     .consent-box {
-      background: #f5f8ff;
-      border: 1px solid #c5d5ea;
+      background: #fff8f5;
+      border: 1px solid #fbd5c0;
       border-radius: 6px;
       padding: 24px;
       margin-bottom: 24px;
       line-height: 1.7;
       font-size: 0.95rem;
-      color: #2d3f55;
+      color: #374151;
     }
 
     .consent-box strong {
-      color: #0d47a1;
+      color: #c94a0a;
     }
 
     .selected-summary {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      background: #eef3fc;
-      border: 1px solid #b3c8e8;
-      border-radius: 6px;
-      padding: 20px;
+      gap: 12px;
       margin-bottom: 24px;
+    }
+
+    .selected-summary > div {
+      background: #fff8f5;
+      border: 1px solid #fbd5c0;
+      border-radius: 8px;
+      padding: 14px 16px;
     }
 
     .actions {
@@ -147,47 +154,68 @@ class PricingOfferSelector extends LitElement {
     }
 
     button.confirm {
-      background: #1565c0;
+      flex: 1;
+      background: #e8520a;
       color: #fff;
       border: none;
-      border-radius: 5px;
-      padding: 12px 28px;
+      border-radius: 30px;
+      padding: 15px 28px;
       font-size: 1rem;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button.confirm:hover:not(:disabled) {
+      background: #c94a0a;
     }
 
     button.confirm:disabled {
-      background: #90aad0;
+      background: #f5c4ae;
       cursor: not-allowed;
     }
 
     button.back {
-      background: transparent;
-      color: #1565c0;
-      border: 1px solid #1565c0;
-      border-radius: 5px;
-      padding: 12px 20px;
+      background: #fff;
+      color: #6b7280;
+      border: 1.5px solid #d1d5db;
+      border-radius: 30px;
+      padding: 15px 24px;
       font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
+      white-space: nowrap;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    button.back:hover {
+      border-color: #9ca3af;
+      color: #374151;
     }
 
     button.retry {
-      background: transparent;
-      color: #1565c0;
-      border: 1px solid #1565c0;
-      border-radius: 5px;
-      padding: 10px 20px;
+      background: #fff;
+      color: #e8520a;
+      border: 1.5px solid #e8520a;
+      border-radius: 30px;
+      padding: 10px 24px;
       font-size: 0.9rem;
+      font-weight: 600;
       cursor: pointer;
       margin-top: 16px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    button.retry:hover {
+      background: #e8520a;
+      color: #fff;
     }
 
     .error-msg {
-      color: #b71c1c;
+      color: #b91c1c;
       background: #fff5f5;
-      border: 1px solid #f5c6cb;
-      border-radius: 5px;
+      border: 1px solid #fca5a5;
+      border-radius: 6px;
       padding: 12px 16px;
       margin-top: 16px;
       font-size: 0.9rem;
@@ -196,7 +224,7 @@ class PricingOfferSelector extends LitElement {
     .success {
       text-align: center;
       padding: 40px 0;
-      color: #1b5e20;
+      color: #15803d;
     }
 
     .success-icon {
@@ -326,7 +354,7 @@ class PricingOfferSelector extends LitElement {
       <div class="waiting">
         <div class="spinner"></div>
         <p>Your application is being reviewed, please wait...</p>
-        <p style="font-size:0.85rem;color:#7a8ea8">We will automatically check for offers every 10 seconds.</p>
+        <p style="font-size:0.85rem;color:#9ca3af">We will automatically check for offers every 10 seconds.</p>
         ${this._error ? html`<div class="error-msg">${this._error}</div>` : ''}
         <button class="retry" @click=${this._fetchOffers}>Check Now</button>
       </div>
@@ -407,8 +435,8 @@ class PricingOfferSelector extends LitElement {
     return html`
       <div class="success">
         <div class="success-icon">✓</div>
-        <h2 style="color:#1b5e20">Offer Confirmed</h2>
-        <p>Your offer has been confirmed. We are now processing your application.<br/>You will be notified of the final decision shortly.</p>
+        <h2 style="color:#15803d">Offer Confirmed</h2>
+        <p style="color:#6b7280">Your offer has been confirmed. We are now processing your application.<br/>You will be notified of the final decision shortly.</p>
       </div>
     `;
   }

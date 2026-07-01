@@ -82,7 +82,7 @@ export default function StatusPage() {
         <Header />
         <div className="status-center">
           <div className="spinner" />
-          <p style={{ color: '#5a6a7e' }}>Loading your application...</p>
+          <p style={{ color: '#6b7280' }}>Loading your application...</p>
         </div>
       </div>
     );
@@ -103,8 +103,8 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
     return (
       <div className="status-center">
         <div className="spinner" />
-        <h3 style={{ color: '#0d47a1' }}>Application Under Review</h3>
-        <p style={{ color: '#5a6a7e' }}>Your application is being processed. This usually takes a few minutes.<br />This page will update automatically.</p>
+        <h3 style={{ color: '#1a1a1a' }}>Application Under Review</h3>
+        <p style={{ color: '#6b7280' }}>Your application is being processed. This usually takes a few minutes.<br />This page will update automatically.</p>
       </div>
     );
   }
@@ -121,7 +121,7 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
       return (
         <div className="status-center">
           <div className="spinner" />
-          <p style={{ color: '#5a6a7e' }}>Loading your offers...</p>
+          <p style={{ color: '#6b7280' }}>Loading your offers...</p>
         </div>
       );
     }
@@ -140,9 +140,9 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
     return (
       <div className="card" style={{ maxWidth: 700 }}>
         <h2>Your Loan Has Been Approved</h2>
-        <p className="card-subtitle">Congratulations! Please review and accept the declarations below to proceed.</p>
+        <p className="card-subtitle">Congratulations! Review your offer and accept the declarations below to proceed.</p>
         <hr className="divider" />
-        <OfferAcceptanceMfe applicationId={applicationId} />
+        <OfferAcceptanceMfe applicationId={applicationId} application={application} />
       </div>
     );
   }
@@ -159,7 +159,7 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
       return (
         <div className="status-center">
           <div className="spinner" />
-          <p style={{ color: '#5a6a7e' }}>Loading document portal...</p>
+          <p style={{ color: '#6b7280' }}>Loading document portal...</p>
         </div>
       );
     }
@@ -178,8 +178,8 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
     return (
       <div className="status-center">
         <div className="spinner" />
-        <h3 style={{ color: '#0d47a1' }}>Under Review by Our Team</h3>
-        <p style={{ color: '#5a6a7e' }}>Your application is being reviewed by our underwriting team.<br />You will be notified once a decision has been made.</p>
+        <h3 style={{ color: '#1a1a1a' }}>Under Review by Our Team</h3>
+        <p style={{ color: '#6b7280' }}>Your application is being reviewed by our underwriting team.<br />You will be notified once a decision has been made.</p>
       </div>
     );
   }
@@ -195,8 +195,8 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
     return (
       <div className="status-center">
         <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>✓</div>
-        <h2 style={{ color: '#1b5e20' }}>{statusLabel}</h2>
-        <p style={{ color: '#5a6a7e', maxWidth: 460, margin: '0 auto' }}>
+        <h2 style={{ color: '#15803d' }}>{statusLabel}</h2>
+        <p style={{ color: '#6b7280', maxWidth: 460, margin: '0 auto' }}>
           {status === 'OFFER_ACCEPTED' && 'Your offer has been accepted. We are now arranging the transfer of funds.'}
           {status === 'FUNDING_PENDING' && 'Your loan funds are being prepared and will be disbursed shortly.'}
           {status === 'FUNDED' && 'Your loan has been funded. The funds have been sent to your nominated account.'}
@@ -211,11 +211,11 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
       <div className="status-center" style={{ maxWidth: 520 }}>
         <div style={{ fontSize: '3rem', color: '#b71c1c', marginBottom: 16 }}>✗</div>
         <h2 style={{ color: '#b71c1c' }}>Application Declined</h2>
-        <p style={{ color: '#5a6a7e' }}>
+        <p style={{ color: '#6b7280' }}>
           Unfortunately, we are unable to approve your loan application at this time.
           You will receive a written notice with the reasons for this decision in accordance with the Fair Credit Reporting Act.
         </p>
-        <p style={{ color: '#5a6a7e', fontSize: '0.9rem' }}>
+        <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
           If you have questions, please contact our support team.
         </p>
       </div>
@@ -225,8 +225,8 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
   if (status === 'CANCELLED' || status === 'EXPIRED') {
     return (
       <div className="status-center">
-        <h2 style={{ color: '#5a6a7e' }}>Application {status === 'CANCELLED' ? 'Cancelled' : 'Expired'}</h2>
-        <p style={{ color: '#7a8ea8' }}>This application is no longer active. Please contact support if you believe this is an error.</p>
+        <h2 style={{ color: '#6b7280' }}>Application {status === 'CANCELLED' ? 'Cancelled' : 'Expired'}</h2>
+        <p style={{ color: '#9ca3af' }}>This application is no longer active. Please contact support if you believe this is an error.</p>
       </div>
     );
   }
@@ -234,8 +234,8 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
   return (
     <div className="status-center">
       <div className="spinner" />
-      <h3 style={{ color: '#0d47a1' }}>Processing</h3>
-      <p style={{ color: '#5a6a7e' }}>Status: {status}</p>
+      <h3 style={{ color: '#1a1a1a' }}>Processing</h3>
+      <p style={{ color: '#6b7280' }}>Status: {status}</p>
     </div>
   );
 }
