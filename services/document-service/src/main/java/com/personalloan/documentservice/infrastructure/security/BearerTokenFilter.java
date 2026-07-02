@@ -1,4 +1,4 @@
-package com.personalloan.applicationmanagement.infrastructure.security;
+package com.personalloan.documentservice.infrastructure.security;
 
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -20,10 +20,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Validates the applicant session JWT and enforces that the token's subject (the
- * applicationId it was issued for) matches the applicationId in the request path.
- * applicationId is a public, guessable value, so path-matching alone is not authorization —
- * the token is what proves the caller owns that application.
+ * Validates the applicant session JWT (issued by application-management-service) and enforces
+ * that the token's subject (the applicationId it was issued for) matches the applicationId in
+ * the request path. applicationId is a public, guessable value, so path-matching alone is not
+ * authorization — the token is what proves the caller owns that application.
  */
 @Component
 public class BearerTokenFilter extends OncePerRequestFilter {
@@ -41,10 +41,8 @@ public class BearerTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
-        boolean isPost = "POST".equalsIgnoreCase(request.getMethod());
-        boolean isApplicationIntake = isPost && path.matches(".*/applications/?$");
         boolean isApiDocs = path.contains("/swagger-ui") || path.contains("/v3/api-docs");
-        if (path.contains("/actuator") || path.endsWith("/login") || path.contains("/invitations") || isApplicationIntake || isApiDocs) {
+        if (path.contains("/actuator") || path.contains("/internal/") || isApiDocs) {
             filterChain.doFilter(request, response);
             return;
         }

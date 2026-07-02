@@ -131,6 +131,7 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
           ref={pricingRef}
           application-id={applicationId}
           api-base-url={API.pricing}
+          session-token={sessionStorage.getItem('sessionToken')}
         />
       </div>
     );

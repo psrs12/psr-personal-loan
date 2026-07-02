@@ -6,7 +6,7 @@ class PricingOfferSelector extends HTMLElement {
   private container: HTMLDivElement | null = null
 
   static get observedAttributes() {
-    return ['api-base-url', 'application-id', 'applicant-reference']
+    return ['api-base-url', 'application-id', 'session-token', 'applicant-reference']
   }
 
   connectedCallback() {
@@ -29,12 +29,14 @@ class PricingOfferSelector extends HTMLElement {
   private render() {
     const apiBaseUrl = this.getAttribute('api-base-url') ?? ''
     const applicationId = this.getAttribute('application-id') ?? ''
+    const sessionToken = this.getAttribute('session-token') ?? ''
     const applicantReference = this.getAttribute('applicant-reference') ?? undefined
 
     this.root?.render(
       <OfferFlow
         apiBaseUrl={apiBaseUrl}
         applicationId={applicationId}
+        sessionToken={sessionToken}
         applicantReference={applicantReference}
         onComplete={offerId => {
           this.dispatchEvent(new CustomEvent('offer-confirmed', { detail: { offerId }, bubbles: true, composed: true }))

@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header.jsx';
 import { login } from '../api/client.js';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ applicationId: '', last4SSN: '', dateOfBirth: '' });
+  const location = useLocation();
+  const [form, setForm] = useState({
+    applicationId: location.state?.applicationId ?? '',
+    last4SSN: '',
+    dateOfBirth: '',
+  });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 

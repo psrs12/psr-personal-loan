@@ -152,6 +152,7 @@ services:
       DOCUMENT_DB_PASSWORD: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       APPLICATION_MANAGEMENT_URL: http://application-management-service:8081
+      JWT_SECRET: local-dev-secret-change-in-production
     depends_on:
       postgres:
         condition: service_healthy
@@ -173,6 +174,7 @@ services:
       OFFER_ACCEPTANCE_DB_USER: postgres
       OFFER_ACCEPTANCE_DB_PASSWORD: postgres
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      JWT_SECRET: local-dev-secret-change-in-production
     depends_on:
       postgres:
         condition: service_healthy

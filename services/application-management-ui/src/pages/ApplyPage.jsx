@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header.jsx';
-import { validateInvitation, createApplication } from '../api/client.js';
+import { validateInvitation, createApplication, login } from '../api/client.js';
 
 const LOAN_PURPOSES = [
   { value: 'DEBT_CONSOLIDATION', label: 'Debt Consolidation' },
@@ -159,6 +159,7 @@ export default function ApplyPage() {
   const [invitationOpen, setInvitationOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [submittedApplicationId, setSubmittedApplicationId] = useState(null);
 
   function set(field, value) {
     setForm(f => ({ ...f, [field]: value }));
@@ -211,8 +212,14 @@ export default function ApplyPage() {
       const payload = isITA
         ? { applicationSource: 'INVITATION', intakeId: prefill.intakeId, firstName: form.firstName, lastName: form.lastName, dateOfBirth: form.dateOfBirth, ssn: form.ssn, address, ...contact, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment }
         : { applicationSource: 'DIRECT', firstName: form.firstName, lastName: form.lastName, dateOfBirth: form.dateOfBirth, ssn: form.ssn, address, ...contact, requestedAmount: Number(form.requestedAmount), requestedTermMonths: Number(form.requestedTermMonths), loanPurpose: form.loanPurpose, ...employment };
-      await createApplication(payload);
-      navigate('/portal/login');
+      const response = await createApplication(payload);
+      const last4SSN = form.ssn.replace(/\D/g, '').slice(-4);
+      const session = await login(response.applicationId, last4SSN, form.dateOfBirth);
+      sessionStorage.setItem('sessionToken', session.sessionToken);
+      sessionStorage.setItem('applicationId', session.applicationId);
+      setSubmittedApplicationId(response.applicationId);
+      setStep(4);
+      window.scrollTo(0, 0);
     } catch (e) {
       setSubmitError(e.message);
     } finally {
@@ -227,7 +234,7 @@ export default function ApplyPage() {
     <div className="page-shell">
       <Header onInvitationClick={() => setInvitationOpen(o => !o)} />
       <InvitationPanel open={invitationOpen} onPrefillSuccess={handlePrefillSuccess} />
-      <Steps current={step} />
+      {step <= 3 && <Steps current={step} />}
 
       <div className="apply-page">
 
@@ -471,6 +478,42 @@ export default function ApplyPage() {
               </button>
             </div>
             <p className="btn-no-impact">This won't impact your credit score</p>
+          </div>
+        )}
+
+        {/* ══════════════ STEP 4 — Confirmation ══════════════ */}
+        {step === 4 && (
+          <div className="apply-section" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '2.8rem', marginBottom: 10 }}>✓</div>
+            <h2 style={{ marginBottom: 8 }}>Application Submitted</h2>
+            <p style={{ color: '#6b7280', marginBottom: 20 }}>
+              We're already checking your rates with no impact to your credit score.
+              Save your Application ID below — you'll need it to check your status.
+            </p>
+            <div style={{
+              display: 'inline-block',
+              background: '#fff8f5',
+              border: '1.5px dashed #fbd5c0',
+              borderRadius: 10,
+              padding: '14px 28px',
+              fontSize: '1.15rem',
+              fontWeight: 700,
+              letterSpacing: '0.02em',
+              color: '#e8520a',
+              marginBottom: 24,
+            }}>
+              {submittedApplicationId}
+            </div>
+            <div>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ width: 'auto', padding: '15px 40px' }}
+                onClick={() => navigate('/portal/status')}
+              >
+                View My Offers
+              </button>
+            </div>
           </div>
         )}
 

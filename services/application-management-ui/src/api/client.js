@@ -90,7 +90,7 @@ export async function login(applicationId, last4SSN, dateOfBirth) {
 }
 
 export async function getApplication(applicationId) {
-  const res = await fetch(`${API.appManagement}/applications/${applicationId}`, {
+  const res = await fetch(`${API.appManagement}/applications/${applicationId}/status`, {
     headers: authHeaders(),
   });
   return handleResponse(res);

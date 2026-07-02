@@ -18,7 +18,8 @@ public class ConsentCapturedEventConsumer {
         this.hardPullOrchestrationService = hardPullOrchestrationService;
     }
 
-    @KafkaListener(topics = "${kafka.topics.consent-events}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${kafka.topics.consent-events}", groupId = "${spring.kafka.consumer.group-id}",
+                   containerFactory = "consentCapturedListenerContainerFactory")
     public void onConsentCaptured(ConsentCapturedEvent event) {
         log.info("Received ConsentCaptured event for application {}", event.applicationId());
         hardPullOrchestrationService.initiateHardPull(

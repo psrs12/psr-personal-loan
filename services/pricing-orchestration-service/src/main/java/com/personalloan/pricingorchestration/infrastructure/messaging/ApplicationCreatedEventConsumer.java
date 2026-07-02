@@ -18,7 +18,8 @@ public class ApplicationCreatedEventConsumer {
         this.softPullOrchestrationService = softPullOrchestrationService;
     }
 
-    @KafkaListener(topics = "${kafka.topics.application-events}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${kafka.topics.application-events}", groupId = "${spring.kafka.consumer.group-id}",
+                   containerFactory = "applicationCreatedListenerContainerFactory")
     public void onApplicationCreated(ApplicationCreatedEvent event) {
         log.info("Received ApplicationCreated event for application {}", event.applicationId());
         softPullOrchestrationService.initiateSoftPull(event.applicationId(), null);

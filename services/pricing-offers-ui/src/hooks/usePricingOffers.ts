@@ -8,7 +8,7 @@ interface UsePricingOffersResult {
   reload: () => void
 }
 
-export function usePricingOffers(apiBaseUrl: string, applicationId: string): UsePricingOffersResult {
+export function usePricingOffers(apiBaseUrl: string, applicationId: string, sessionToken: string): UsePricingOffersResult {
   const [offers, setOffers] = useState<PricingOffer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -21,7 +21,9 @@ export function usePricingOffers(apiBaseUrl: string, applicationId: string): Use
     setLoading(true)
     setError(null)
 
-    fetch(`${apiBaseUrl}/applications/${applicationId}/pricing-offers`)
+    fetch(`${apiBaseUrl}/applications/${applicationId}/pricing-offers`, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+    })
       .then(async res => {
         if (!res.ok) throw new Error(`Failed to load offers (${res.status})`)
         return res.json() as Promise<PricingOffer[]>
@@ -40,7 +42,7 @@ export function usePricingOffers(apiBaseUrl: string, applicationId: string): Use
       })
 
     return () => { cancelled = true }
-  }, [apiBaseUrl, applicationId, tick])
+  }, [apiBaseUrl, applicationId, sessionToken, tick])
 
   return { offers, loading, error, reload }
 }
