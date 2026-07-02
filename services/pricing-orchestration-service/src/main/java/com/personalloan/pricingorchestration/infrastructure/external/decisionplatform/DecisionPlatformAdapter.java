@@ -26,7 +26,7 @@ public class DecisionPlatformAdapter implements DecisionPlatformPort {
         this.restClient = builder.baseUrl(baseUrl).build();
     }
 
-    DecisionPlatformAdapter(RestClient restClient) {
+    public DecisionPlatformAdapter(RestClient restClient) {
         this.restClient = restClient;
     }
 

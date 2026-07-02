@@ -43,6 +43,7 @@ class CreateApplicationUseCaseTest {
     @Mock private InvitationSessionRepository invitationSessionRepository;
     @Mock private SSNTokenStore ssnTokenStore;
     @Mock private BoltTokenizationPort boltTokenizationPort;
+    @Mock private ApplicationExpiryConfigRepository applicationExpiryConfigRepository;
 
     private CreateApplicationUseCase useCase;
 
@@ -56,7 +57,7 @@ class CreateApplicationUseCaseTest {
                 applicationRepository, applicantRepository, loanRequestRepository,
                 applicationOfferRepository, applicationAuditRepository, applicationEventPublisher,
                 applicationIntakeContextRepository, invitationSessionRepository,
-                ssnTokenStore, boltTokenizationPort
+                ssnTokenStore, boltTokenizationPort, applicationExpiryConfigRepository
         );
     }
 

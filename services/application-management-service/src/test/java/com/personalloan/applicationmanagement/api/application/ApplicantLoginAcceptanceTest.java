@@ -37,22 +37,22 @@ class ApplicantLoginAcceptanceTest extends BaseAcceptanceTest {
         h.set("X-Channel-ID", "WEB");
         h.setContentType(MediaType.APPLICATION_JSON);
 
-        Map<String, Object> body = Map.of(
-                "ssnVerificationToken", token,
-                "ssn", "000001234",
-                "firstName", "Alice",
-                "lastName", "Walker",
-                "dateOfBirth", "1992-03-20",
-                "citizenship", "US_CITIZEN",
-                "email", "alice@example.com",
-                "phone", "555-9999",
-                "street", "1 Test St",
-                "city", "Austin",
-                "state", "TX",
-                "zip", "78701",
-                "annualIncome", 70000.00,
-                "requestedAmount", 8000.00,
-                "termMonths", 36
+        Map<String, Object> body = Map.ofEntries(
+                Map.entry("ssnVerificationToken", token),
+                Map.entry("ssn", "000001234"),
+                Map.entry("firstName", "Alice"),
+                Map.entry("lastName", "Walker"),
+                Map.entry("dateOfBirth", "1992-03-20"),
+                Map.entry("citizenship", "US_CITIZEN"),
+                Map.entry("email", "alice@example.com"),
+                Map.entry("phone", "555-9999"),
+                Map.entry("street", "1 Test St"),
+                Map.entry("city", "Austin"),
+                Map.entry("state", "TX"),
+                Map.entry("zip", "78701"),
+                Map.entry("annualIncome", 70000.00),
+                Map.entry("requestedAmount", 8000.00),
+                Map.entry("termMonths", 36)
         );
 
         ResponseEntity<Map> resp = restTemplate.postForEntity(

@@ -24,7 +24,7 @@ public class CreditManagementAdapter implements CreditManagementPort {
         this.restClient = builder.baseUrl(baseUrl).build();
     }
 
-    CreditManagementAdapter(RestClient restClient) {
+    public CreditManagementAdapter(RestClient restClient) {
         this.restClient = restClient;
     }
 

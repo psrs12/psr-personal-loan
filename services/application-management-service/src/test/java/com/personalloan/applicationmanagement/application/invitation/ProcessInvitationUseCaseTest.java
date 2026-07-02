@@ -1,5 +1,6 @@
 package com.personalloan.applicationmanagement.application.invitation;
 
+import com.personalloan.applicationmanagement.domain.application.port.ApplicationAuditRepository;
 import com.personalloan.applicationmanagement.domain.application.port.ApplicationRepository;
 import com.personalloan.applicationmanagement.domain.exception.DuplicateApplicationException;
 import com.personalloan.applicationmanagement.domain.exception.OfferExpiredException;
@@ -29,6 +30,7 @@ class ProcessInvitationUseCaseTest {
     @Mock private InvitationSessionRepository invitationSessionRepository;
     @Mock private ApplicationIntakeContextRepository applicationIntakeContextRepository;
     @Mock private ApplicationRepository applicationRepository;
+    @Mock private ApplicationAuditRepository applicationAuditRepository;
 
     private ProcessInvitationUseCase useCase;
 
@@ -46,7 +48,7 @@ class ProcessInvitationUseCaseTest {
         useCase = new ProcessInvitationUseCase(
                 offerManagementPort, customerProfilePort,
                 invitationSessionRepository, applicationIntakeContextRepository,
-                applicationRepository
+                applicationRepository, applicationAuditRepository
         );
         ReflectionTestUtils.setField(useCase, "sessionExpirationMinutes", 30);
     }

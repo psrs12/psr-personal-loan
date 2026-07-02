@@ -72,7 +72,8 @@ class InvitationAcceptanceTest extends BaseAcceptanceTest {
         assertThat(response.getBody()).containsKey("offer");
         assertThat(response.getBody()).containsKey("prefill");
 
-        Map<?, ?> prefill = (Map<?, ?>) response.getBody().get("prefill");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> prefill = (Map<String, Object>) response.getBody().get("prefill");
         assertThat(prefill).containsKey("firstName");
         assertThat(prefill).containsKey("lastName");
         assertThat(prefill).doesNotContainKey("phone");

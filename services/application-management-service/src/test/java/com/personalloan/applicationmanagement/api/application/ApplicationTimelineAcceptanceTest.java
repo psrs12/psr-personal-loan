@@ -37,22 +37,22 @@ class ApplicationTimelineAcceptanceTest extends BaseAcceptanceTest {
         String token = "timeline-token-" + System.currentTimeMillis();
         ssnTokenStore.store(token, java.time.LocalDateTime.now().plusMinutes(10));
 
-        Map<String, Object> body = Map.of(
-                "ssnVerificationToken", token,
-                "ssn", "123456789",
-                "firstName", "John",
-                "lastName", "Smith",
-                "dateOfBirth", "1990-01-15",
-                "citizenship", "US_CITIZEN",
-                "email", "john@example.com",
-                "phone", "555-1234",
-                "street", "123 Main St",
-                "city", "New York",
-                "state", "NY",
-                "zip", "10001",
-                "annualIncome", 80000.00,
-                "requestedAmount", 10000.00,
-                "termMonths", 36
+        Map<String, Object> body = Map.ofEntries(
+                Map.entry("ssnVerificationToken", token),
+                Map.entry("ssn", "123456789"),
+                Map.entry("firstName", "John"),
+                Map.entry("lastName", "Smith"),
+                Map.entry("dateOfBirth", "1990-01-15"),
+                Map.entry("citizenship", "US_CITIZEN"),
+                Map.entry("email", "john@example.com"),
+                Map.entry("phone", "555-1234"),
+                Map.entry("street", "123 Main St"),
+                Map.entry("city", "New York"),
+                Map.entry("state", "NY"),
+                Map.entry("zip", "10001"),
+                Map.entry("annualIncome", 80000.00),
+                Map.entry("requestedAmount", 10000.00),
+                Map.entry("termMonths", 36)
         );
 
         ResponseEntity<Map> createResponse = restTemplate.postForEntity(
