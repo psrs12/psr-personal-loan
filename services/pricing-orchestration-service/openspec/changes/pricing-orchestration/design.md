@@ -94,6 +94,16 @@ The Offer Management Platform is the system of record for campaign offers (ITA j
 
 ---
 
+### Decision 8: Offer, Selection, and Consent Data Owned by Pricing Orchestration Service
+
+**Decision**: `pricing-orchestration-service` is the system of record for pricing offers, offer selection, and consent records (`pricing_offers`, `offer_selection`, `consent_records`), including the applicant-facing REST endpoints (`GET /applications/{id}/pricing-offers`, `POST /applications/{id}/offer-selection`, `POST /applications/{id}/consent`). `application-management-service` no longer persists this data.
+
+**Rationale**: `pricing-orchestration-service` already orchestrates the full pricing workflow end-to-end — soft pull, pricing engine call, offer presentation, selection, consent, hard pull. Co-locating offer/consent persistence with the orchestration logic that produces and consumes it avoids the internal-API round-trip that existed under the original design (where `application-management-service` owned this data and `pricing-orchestration-service` pushed offers into it via an internal sync API after every pricing response, and read them back for selection/consent validation). `application-management-service` remains the system of record only for the Application aggregate itself: status, `soft_pull_credit_report_reference_id`, `hard_pull_credit_report_reference_id`, `campaign_offer_id`/`campaign_offer_terms`, and `application_expiry_date`. `pricing-orchestration-service` reads/writes those fields via the existing internal API (`InternalPricingController` / `ApplicationManagementAdapter`) when it needs application-level state.
+
+**Alternative considered**: Keep offer/selection/consent in `application-management-service` with `pricing-orchestration-service` writing to it via internal API and the public endpoints proxying through `application-management-service`. Rejected because it adds a network hop and duplicated validation logic (offer expiry, offer existence) in two services for no ownership benefit — the orchestrator is the only service that produces this data and is best positioned to enforce its invariants (e.g. re-pricing on expiry, consent guarding hard pull).
+
+---
+
 ## Risks / Trade-offs
 
 **Re-pricing introduces a second soft pull per session** → Mitigation: Configurable application expiry prevents indefinite re-pricing cycles. Offer expiry dates from the pricing engine act as a natural throttle.
@@ -110,12 +120,13 @@ The Offer Management Platform is the system of record for campaign offers (ITA j
 
 ## Migration Plan
 
-1. Deploy `application-service` schema migration: new state values, new tables for credit report references, pricing offers, offer selection, consent records.
+1. Deploy `application-service` schema migration: new state values, new columns for credit report references and campaign offer reference on the application table.
 2. Deploy `credit-evaluation-service` update: add soft pull and hard pull as independent orchestration paths.
-3. Deploy `pricing-orchestration-service`: new service consuming `ApplicationCreated` and `ConsentCaptured` events.
+3. Deploy `pricing-orchestration-service`: new service consuming `ApplicationCreated` and `ConsentCaptured` events, with its own schema migration creating `pricing_offers`, `offer_selection`, and `consent_records` tables (see Decision 8) and its own public offer/selection/consent API.
 4. Update `application-service` event publishing: publish `ApplicationCreated` event on successful application creation.
-5. No changes to existing in-flight applications. New states only apply to applications created after deployment.
-6. Rollback: pricing orchestration service can be disabled by stopping event consumption. Existing applications fall back to prior flow.
+5. Remove the superseded `pricing_offers`, `offer_selection`, and `consent_records` tables and endpoints from `application-service`: add a new Flyway migration in `application-service` that `DROP TABLE IF EXISTS`s these three tables. Old migration files that originally created them are left untouched (Flyway history is immutable); the drop is a new forward migration. No production data exists yet in this environment, so a destructive drop is acceptable.
+6. No changes to existing in-flight applications. New states only apply to applications created after deployment.
+7. Rollback: pricing orchestration service can be disabled by stopping event consumption. Existing applications fall back to prior flow.
 
 ---
 

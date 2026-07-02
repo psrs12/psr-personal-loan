@@ -44,7 +44,8 @@ public class BearerTokenFilter extends OncePerRequestFilter {
         boolean isPost = "POST".equalsIgnoreCase(request.getMethod());
         boolean isApplicationIntake = isPost && path.matches(".*/applications/?$");
         boolean isApiDocs = path.contains("/swagger-ui") || path.contains("/v3/api-docs");
-        if (path.contains("/actuator") || path.endsWith("/login") || path.contains("/invitations") || isApplicationIntake || isApiDocs) {
+        if (path.contains("/actuator") || path.endsWith("/login") || path.contains("/invitations")
+                || path.contains("/internal/") || isApplicationIntake || isApiDocs) {
             filterChain.doFilter(request, response);
             return;
         }

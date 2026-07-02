@@ -4,6 +4,9 @@ import com.personalloan.applicationmanagement.domain.application.LoanRequest;
 import com.personalloan.applicationmanagement.domain.application.port.LoanRequestRepository;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+import java.util.UUID;
+
 @Component
 public class LoanRequestJpaAdapter implements LoanRequestRepository {
 
@@ -19,6 +22,11 @@ public class LoanRequestJpaAdapter implements LoanRequestRepository {
         return loanRequest;
     }
 
+    @Override
+    public Optional<LoanRequest> findByApplicationId(UUID applicationId) {
+        return loanRequestRepo.findByApplicationId(applicationId).map(this::toDomain);
+    }
+
     private LoanRequestJpaEntity toEntity(LoanRequest lr) {
         LoanRequestJpaEntity e = new LoanRequestJpaEntity();
         e.setLoanRequestId(lr.getLoanRequestId());
@@ -28,5 +36,10 @@ public class LoanRequestJpaAdapter implements LoanRequestRepository {
         e.setLoanPurpose(lr.getLoanPurpose());
         e.setCreatedTimestamp(lr.getCreatedTimestamp());
         return e;
+    }
+
+    private LoanRequest toDomain(LoanRequestJpaEntity e) {
+        return LoanRequest.reconstitute(e.getLoanRequestId(), e.getApplicationId(), e.getRequestedAmount(),
+                e.getTermMonths(), e.getLoanPurpose(), e.getCreatedTimestamp());
     }
 }

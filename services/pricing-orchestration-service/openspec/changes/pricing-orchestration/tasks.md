@@ -1,13 +1,16 @@
+> **Note**: Offer/selection/consent ownership was moved from `application-management-service` to `pricing-orchestration-service` after initial implementation — see design.md Decision 8. Section 3 tasks below are superseded by new tasks appended to section 5 (5.13–5.20). Table/endpoint creation in section 1 (1.4–1.6) is likewise superseded; those tables are now created in `pricing-orchestration-service`'s own migrations (task 5.13) and dropped from `application-management-service` (new task 1.9).
+
 ## 1. Database Schema — Application Service
 
 - [x] 1.1 Add new application states to state enum: `SOFT_PULL_PENDING`, `PRICING_PENDING`, `OFFER_PENDING`, `CONSENT_CAPTURED`, `HARD_PULL_PENDING`, `DECISION_PENDING`
 - [x] 1.2 Add `soft_pull_credit_report_reference_id` and `hard_pull_credit_report_reference_id` columns to application table
 - [x] 1.3 Add `campaign_offer_id` and `campaign_offer_terms` (JSONB) columns to application table
-- [x] 1.4 Create `pricing_offers` table with columns: `pricing_offer_id`, `application_id`, `approved_amount`, `interest_rate`, `apr`, `term_months`, `monthly_repayment`, `total_repayable`, `offer_expiry_date`, `pricing_model_ref`, `bureau_snapshot_ref`, `offer_status`, `created_at`
-- [x] 1.5 Create `offer_selection` table with columns: `id`, `application_id`, `selected_pricing_offer_id`, `offer_selected_timestamp`
-- [x] 1.6 Create `consent_records` table with columns: `id`, `application_id`, `consent_type`, `consent_given_at`, `consent_channel`, `applicant_reference`, `selected_pricing_offer_id`
+- [x] 1.4 ~~Create `pricing_offers` table~~ SUPERSEDED — now created in `pricing-orchestration-service` (see 5.13)
+- [x] 1.5 ~~Create `offer_selection` table~~ SUPERSEDED — now created in `pricing-orchestration-service` (see 5.13)
+- [x] 1.6 ~~Create `consent_records` table~~ SUPERSEDED — now created in `pricing-orchestration-service` (see 5.13)
 - [x] 1.7 Add `application_expiry_config` table with columns: `product_type`, `channel`, `expiry_threshold_days`
 - [x] 1.8 Write and validate all Flyway migration scripts
+- [x] 1.9 Add new Flyway migration in `application-management-service` that drops `pricing_offers`, `offer_selection`, and `consent_records` tables (ownership moved to `pricing-orchestration-service` — Decision 8)
 
 ## 2. Application Service — State Machine Extension
 
@@ -18,14 +21,14 @@
 - [x] 2.5 Add `ApplicationCreated` event publishing on successful application creation
 - [x] 2.6 Write unit tests for all new state transitions including invalid transition rejections
 
-## 3. Application Service — Pricing Data APIs
+## 3. Application Service — Pricing Data APIs (SUPERSEDED — see Decision 8, tasks moved to section 5)
 
-- [x] 3.1 Implement `GET /applications/{applicationId}/pricing-offers` endpoint — retrieves active non-expired pricing offers, triggers re-pricing if all offers expired
-- [x] 3.2 Implement `POST /applications/{applicationId}/offer-selection` endpoint — validates offer exists and is not expired, persists selection
-- [x] 3.3 Implement `POST /applications/{applicationId}/consent` endpoint — persists hard pull consent and offer acceptance consent records, publishes `ConsentCaptured` event
-- [x] 3.4 Add offer status management: `ACTIVE`, `SUPERSEDED`, `EXPIRED`
-- [x] 3.5 Add campaign offer reference storage on application creation (ITA journey — nullable for direct journey)
-- [x] 3.6 Write integration tests for all new endpoints
+- [x] 3.1 ~~Implement `GET /applications/{applicationId}/pricing-offers` endpoint~~ SUPERSEDED — moved to `pricing-orchestration-service` (5.17)
+- [x] 3.2 ~~Implement `POST /applications/{applicationId}/offer-selection` endpoint~~ SUPERSEDED — moved to `pricing-orchestration-service` (5.18)
+- [x] 3.3 ~~Implement `POST /applications/{applicationId}/consent` endpoint~~ SUPERSEDED — moved to `pricing-orchestration-service` (5.19)
+- [x] 3.4 ~~Add offer status management~~ SUPERSEDED — moved to `pricing-orchestration-service` (5.13)
+- [x] 3.5 Add campaign offer reference storage on application creation (ITA journey — nullable for direct journey) — retained in `application-management-service`
+- [x] 3.6 ~~Write integration tests for all new endpoints~~ SUPERSEDED — moved to `pricing-orchestration-service` (5.20)
 
 ## 4. Credit Evaluation Service — Soft Pull and Hard Pull
 
@@ -57,6 +60,19 @@
 - [x] 5.10 Write unit tests for pricing request assembly (ITA and direct journey variants)
 - [x] 5.11 Write unit tests for offer persistence, decline handling, and re-pricing
 - [x] 5.12 Write integration tests with Testcontainers for Decision Platform pricing adapter
+
+- [x] 5.13 Add JPA/Flyway/datasource configuration to `pricing-orchestration-service` (pom.xml + application.yml) and create Flyway migrations for `pricing_offers`, `offer_selection`, `consent_records` tables (same columns as originally specified in section 1)
+- [x] 5.14 Implement `PricingOffer`, `OfferSelection`, `ConsentRecord` domain aggregates and repository ports in `pricing-orchestration-service`
+- [x] 5.15 Implement JPA entities/repositories/adapters for the three tables in `pricing-orchestration-service`
+- [x] 5.16 Add `BearerTokenFilter`-equivalent security filter to `pricing-orchestration-service` so the new public endpoints require `Authorization: Bearer <token>`, consistent with platform security rules
+- [x] 5.17 Implement `GET /applications/{applicationId}/pricing-offers` endpoint on `pricing-orchestration-service` — retrieves active non-expired pricing offers, triggers re-pricing if all offers expired
+- [x] 5.18 Implement `POST /applications/{applicationId}/offer-selection` endpoint on `pricing-orchestration-service` — validates offer exists and is not expired, persists selection
+- [x] 5.19 Implement `POST /applications/{applicationId}/consent` endpoint on `pricing-orchestration-service` — persists hard pull consent and offer acceptance consent records, publishes `ConsentCaptured` event (self-consumed by the existing `ConsentCapturedEventConsumer` to trigger hard pull)
+- [x] 5.20 Write integration tests for the new public endpoints in `pricing-orchestration-service`
+- [x] 5.21 Implement application-level expiry enforcement in `GetPricingOffersUseCase`: read `applicationExpiryDate`/`applicationStatus` via `ApplicationManagementPort.getApplicationExpiryInfo` (backed by extended `/internal/.../pricing-data` response), transition application to `EXPIRED` and reject with `ApplicationExpiredException` before falling back to offer-level re-pricing
+- [x] 5.22 Add `POST /internal/applications/{id}/audit-events` endpoint on `application-management-service` (`InternalPricingController` + `InternalPricingSyncUseCase.recordAuditEvent`) writing to the existing `ApplicationAuditRepository`, so the applicant timeline continues to reflect pricing-orchestration-service-owned actions
+- [x] 5.23 Wire `SelectOfferUseCase` and `CaptureConsentUseCase` in `pricing-orchestration-service` to call `ApplicationManagementPort.recordAuditEvent` after persisting, recording `OFFER_SELECTED` and `CONSENT_CAPTURED` audit events
+- [ ] 5.24 Write unit tests for the new expiry-enforcement path in `GetPricingOffersUseCase` and for the audit-trail calls in `SelectOfferUseCase`/`CaptureConsentUseCase`/`InternalPricingSyncUseCase.recordAuditEvent` — not yet written
 
 ## 6. Decision Orchestration Service — Final Decision
 
