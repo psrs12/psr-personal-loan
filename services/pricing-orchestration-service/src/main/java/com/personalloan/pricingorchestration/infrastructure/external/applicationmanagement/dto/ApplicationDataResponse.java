@@ -1,6 +1,7 @@
 package com.personalloan.pricingorchestration.infrastructure.external.applicationmanagement.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public record ApplicationDataResponse(
         String softPullCreditReportReferenceId,
@@ -10,5 +11,7 @@ public record ApplicationDataResponse(
         BigDecimal annualIncome,
         String employmentStatus,
         String campaignOfferId,
-        String campaignOfferTerms
+        String campaignOfferTerms,
+        LocalDateTime applicationExpiryDate,
+        String applicationStatus
 ) {}

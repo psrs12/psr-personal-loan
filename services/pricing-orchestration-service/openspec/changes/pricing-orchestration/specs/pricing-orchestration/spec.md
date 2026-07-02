@@ -208,6 +208,63 @@ The system SHALL support application decline from any stage of the pricing orche
 
 ---
 
+### Requirement: Pricing Offers Persistence
+The system SHALL own and persist all pricing offers returned by the Decision Platform (Pricing Engine) in its own `pricing_offers` table, keyed by `application_id`.
+
+#### Scenario: All pricing offers persisted
+- **WHEN** pricing offers are received from the Decision Platform
+- **THEN** the system SHALL persist each offer with: `pricing_offer_id`, `application_id`, `approved_amount`, `interest_rate`, `apr`, `term_months`, `monthly_repayment`, `total_repayable`, `offer_expiry_date`, `pricing_model_ref`, `bureau_snapshot_ref`, and `offer_status`
+
+#### Scenario: Pricing offers replaced on re-pricing
+- **WHEN** a re-pricing event occurs due to offer expiry
+- **THEN** the system SHALL mark previous pricing offers as `SUPERSEDED`
+- **THEN** the system SHALL persist the new set of pricing offers as `ACTIVE`
+
+---
+
+### Requirement: Offer Selection Persistence
+The system SHALL own and persist the applicant's selected pricing offer in its own `offer_selection` table.
+
+#### Scenario: Selected offer recorded
+- **WHEN** an applicant selects a pricing offer
+- **THEN** the system SHALL persist `selected_pricing_offer_id` and `offer_selected_timestamp` against the application
+
+#### Scenario: Selected offer retained through referred path
+- **WHEN** an application is referred to manual underwriting
+- **THEN** the `selected_pricing_offer_id` SHALL remain unchanged throughout the underwriting review
+
+---
+
+### Requirement: Consent Record Persistence
+The system SHALL own and persist explicit consent records for hard pull and offer acceptance in its own `consent_records` table. Consent records are immutable — no update or delete operations are permitted after creation, and records are retained for a minimum of 7 years.
+
+#### Scenario: Hard pull consent persisted
+- **WHEN** an applicant grants hard pull consent
+- **THEN** the system SHALL persist a consent record with `consent_type: HARD_PULL`, `consent_given_at`, `consent_channel`, and `applicant_reference`
+
+#### Scenario: Offer acceptance consent persisted
+- **WHEN** an applicant accepts the selected offer terms
+- **THEN** the system SHALL persist a consent record with `consent_type: OFFER_ACCEPTANCE`, `consent_given_at`, `consent_channel`, and `selected_pricing_offer_id`
+
+---
+
+### Requirement: Public Offer, Selection, and Consent API
+The system SHALL expose the applicant-facing endpoints for retrieving pricing offers, submitting offer selection, and capturing consent directly on `pricing-orchestration-service`.
+
+#### Scenario: Retrieve pricing offers
+- **WHEN** an applicant calls `GET /applications/{applicationId}/pricing-offers`
+- **THEN** the system SHALL return non-expired persisted offers for the application
+
+#### Scenario: Submit offer selection
+- **WHEN** an applicant calls `POST /applications/{applicationId}/offer-selection`
+- **THEN** the system SHALL validate the offer exists and is not expired, then persist the selection
+
+#### Scenario: Submit consent
+- **WHEN** an applicant calls `POST /applications/{applicationId}/consent`
+- **THEN** the system SHALL persist the consent record(s) and publish a `ConsentCaptured` event
+
+---
+
 ### Requirement: Application Expiry Configuration
 The system SHALL support configurable application expiry thresholds. Expired applications SHALL transition to a terminal `EXPIRED` state.
 

@@ -1,5 +1,6 @@
 package com.personalloan.pricingorchestration.domain.pricing.port;
 
+import com.personalloan.pricingorchestration.domain.pricing.ApplicationExpiryInfo;
 import com.personalloan.pricingorchestration.domain.pricing.PricingRequest;
 
 import java.util.UUID;
@@ -9,6 +10,6 @@ public interface ApplicationManagementPort {
     void updateApplicationStatus(UUID applicationId, String status);
     void persistSoftPullReference(UUID applicationId, String creditReportReferenceId);
     void persistHardPullReference(UUID applicationId, String creditReportReferenceId);
-    void persistPricingOffers(UUID applicationId, Object offersPayload);
-    void markOffersSuperseded(UUID applicationId);
+    ApplicationExpiryInfo getApplicationExpiryInfo(UUID applicationId);
+    void recordAuditEvent(UUID applicationId, String eventType, String payload);
 }

@@ -73,6 +73,11 @@ public class Application {
         this.updatedTimestamp = LocalDateTime.now();
     }
 
+    public void applyExpiryThreshold(int expiryThresholdDays) {
+        this.applicationExpiryDate = this.createdTimestamp.plusDays(expiryThresholdDays);
+        this.updatedTimestamp = LocalDateTime.now();
+    }
+
     public boolean isExpired() {
         return applicationExpiryDate != null && LocalDateTime.now().isAfter(applicationExpiryDate);
     }

@@ -1,6 +1,7 @@
 package com.personalloan.pricingorchestration.infrastructure.messaging;
 
 import com.personalloan.pricingorchestration.domain.pricing.FinalDecisionResponse;
+import com.personalloan.pricingorchestration.domain.pricing.event.ConsentCapturedEvent;
 import com.personalloan.pricingorchestration.domain.pricing.port.PricingEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,11 +16,19 @@ public class KafkaPricingEventPublisher implements PricingEventPublisher {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String pricingEventsTopic;
+    private final String consentEventsTopic;
 
     public KafkaPricingEventPublisher(KafkaTemplate<String, Object> kafkaTemplate,
-                                       @Value("${kafka.topics.pricing-events}") String pricingEventsTopic) {
+                                       @Value("${kafka.topics.pricing-events}") String pricingEventsTopic,
+                                       @Value("${kafka.topics.consent-events}") String consentEventsTopic) {
         this.kafkaTemplate = kafkaTemplate;
         this.pricingEventsTopic = pricingEventsTopic;
+        this.consentEventsTopic = consentEventsTopic;
+    }
+
+    @Override
+    public void publishConsentCaptured(ConsentCapturedEvent event) {
+        kafkaTemplate.send(consentEventsTopic, event.applicationId().toString(), event);
     }
 
     @Override

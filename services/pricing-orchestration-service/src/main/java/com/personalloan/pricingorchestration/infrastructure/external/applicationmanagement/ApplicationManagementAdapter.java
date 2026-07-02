@@ -1,9 +1,11 @@
 package com.personalloan.pricingorchestration.infrastructure.external.applicationmanagement;
 
+import com.personalloan.pricingorchestration.domain.pricing.ApplicationExpiryInfo;
 import com.personalloan.pricingorchestration.domain.pricing.PricingRequest;
 import com.personalloan.pricingorchestration.domain.pricing.port.ApplicationManagementPort;
 import com.personalloan.pricingorchestration.infrastructure.external.applicationmanagement.dto.ApplicationDataResponse;
 import com.personalloan.pricingorchestration.infrastructure.external.applicationmanagement.dto.ApplicationStatusRequest;
+import com.personalloan.pricingorchestration.infrastructure.external.applicationmanagement.dto.AuditEventRequest;
 import com.personalloan.pricingorchestration.infrastructure.external.applicationmanagement.dto.CreditReferenceRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,18 +72,19 @@ public class ApplicationManagementAdapter implements ApplicationManagementPort {
     }
 
     @Override
-    public void persistPricingOffers(UUID applicationId, Object offersPayload) {
-        restClient.post()
-                .uri("/api/v1/application-management/internal/applications/{id}/pricing-offers", applicationId)
-                .body(offersPayload)
+    public ApplicationExpiryInfo getApplicationExpiryInfo(UUID applicationId) {
+        ApplicationDataResponse data = restClient.get()
+                .uri("/api/v1/application-management/internal/applications/{id}/pricing-data", applicationId)
                 .retrieve()
-                .toBodilessEntity();
+                .body(ApplicationDataResponse.class);
+        return new ApplicationExpiryInfo(data.applicationExpiryDate(), data.applicationStatus());
     }
 
     @Override
-    public void markOffersSuperseded(UUID applicationId) {
-        restClient.patch()
-                .uri("/api/v1/application-management/internal/applications/{id}/offers/supersede", applicationId)
+    public void recordAuditEvent(UUID applicationId, String eventType, String payload) {
+        restClient.post()
+                .uri("/api/v1/application-management/internal/applications/{id}/audit-events", applicationId)
+                .body(new AuditEventRequest(eventType, payload))
                 .retrieve()
                 .toBodilessEntity();
     }
