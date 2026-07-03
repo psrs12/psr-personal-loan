@@ -8,7 +8,10 @@ import { API } from '../api/config.js';
 
 const POLL_INTERVAL_MS = 8000;
 
-const PROCESSING_STATES = new Set(['SUBMITTED', 'PROCESSING', 'STARTED', 'CREATED', 'IN_PROGRESS']);
+const PROCESSING_STATES = new Set([
+  'SUBMITTED', 'PROCESSING', 'STARTED', 'CREATED', 'IN_PROGRESS',
+  'SOFT_PULL_PENDING', 'PRICING_PENDING', 'HARD_PULL_PENDING', 'DECISION_PENDING',
+]);
 const UNDER_REVIEW_STATES = new Set(['UNDERWRITING', 'COMPLIANCE_HOLD']);
 const POST_ACCEPTANCE_STATES = new Set(['OFFER_ACCEPTED', 'FUNDING_PENDING', 'FUNDED', 'COMPLETED']);
 
@@ -16,8 +19,13 @@ export default function StatusPage() {
   const navigate = useNavigate();
   const applicationId = sessionStorage.getItem('applicationId');
 
+  const offerConfirmedKey = `offerConfirmed:${applicationId}`;
+
   const [application, setApplication] = useState(null);
   const [loadError, setLoadError] = useState(null);
+  const [offerConfirmed, setOfferConfirmed] = useState(
+    () => sessionStorage.getItem(offerConfirmedKey) === 'true'
+  );
   const pollRef = useRef(null);
 
   const pricingScript = useWebComponentScript(API.pricingOffersUiJs);
@@ -37,13 +45,16 @@ export default function StatusPage() {
   async function fetchStatus() {
     try {
       const data = await getApplication(applicationId);
-      setApplication(data);
       const status = data.applicationStatus ?? data.status;
+      setApplication(data);
+      if (status !== 'OFFER_PENDING') {
+        sessionStorage.removeItem(offerConfirmedKey);
+      }
       if (shouldPoll(status)) {
         pollRef.current = setTimeout(fetchStatus, POLL_INTERVAL_MS);
       }
     } catch (e) {
-      if (e.message.includes('401') || e.message.includes('403')) {
+      if (e.status === 401 || e.status === 403) {
         sessionStorage.clear();
         navigate('/portal/login');
         return;
@@ -54,10 +65,16 @@ export default function StatusPage() {
   }
 
   function shouldPoll(status) {
-    return PROCESSING_STATES.has(status) || UNDER_REVIEW_STATES.has(status);
+    return (
+      PROCESSING_STATES.has(status) ||
+      UNDER_REVIEW_STATES.has(status) ||
+      (status === 'OFFER_PENDING' && sessionStorage.getItem(offerConfirmedKey) === 'true')
+    );
   }
 
   const handleOfferConfirmed = useCallback(() => {
+    sessionStorage.setItem(offerConfirmedKey, 'true');
+    setOfferConfirmed(true);
     if (pollRef.current) clearTimeout(pollRef.current);
     setTimeout(fetchStatus, 2000);
   }, []);
@@ -93,12 +110,12 @@ export default function StatusPage() {
   return (
     <div className="page-shell">
       <Header />
-      {renderContent(status, application, applicationId, pricingRef, pricingScript, documentScript)}
+      {renderContent(status, application, applicationId, pricingRef, pricingScript, documentScript, offerConfirmed)}
     </div>
   );
 }
 
-function renderContent(status, application, applicationId, pricingRef, pricingScript, documentScript) {
+function renderContent(status, application, applicationId, pricingRef, pricingScript, documentScript, offerConfirmed) {
   if (PROCESSING_STATES.has(status) && status !== 'PROCESSING') {
     return (
       <div className="status-center">
@@ -109,31 +126,37 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
     );
   }
 
-  if (status === 'PROCESSING') {
-    if (pricingScript.error) {
-      return (
-        <div className="card">
-          <div className="alert-error">Unable to load offer selector: {pricingScript.error}</div>
-        </div>
-      );
-    }
-    if (!pricingScript.loaded) {
-      return (
-        <div className="status-center">
-          <div className="spinner" />
-          <p style={{ color: '#6b7280' }}>Loading your offers...</p>
-        </div>
-      );
-    }
+  if (status === 'OFFER_PENDING') {
+    const overlayHidden = offerConfirmed || pricingScript.error || !pricingScript.loaded;
     return (
-      <div style={{ maxWidth: 760, margin: '40px auto', padding: '0 20px' }}>
-        <pricing-offer-selector
-          ref={pricingRef}
-          application-id={applicationId}
-          api-base-url={API.pricing}
-          session-token={sessionStorage.getItem('sessionToken')}
-        />
-      </div>
+      <>
+        {pricingScript.error && (
+          <div className="card">
+            <div className="alert-error">Unable to load offer selector: {pricingScript.error}</div>
+          </div>
+        )}
+        {!pricingScript.error && !pricingScript.loaded && (
+          <div className="status-center">
+            <div className="spinner" />
+            <p style={{ color: '#6b7280' }}>Loading your offers...</p>
+          </div>
+        )}
+        {!pricingScript.error && offerConfirmed && (
+          <div className="status-center">
+            <div className="spinner" />
+            <h3 style={{ color: '#1a1a1a' }}>Offer Confirmed</h3>
+            <p style={{ color: '#6b7280' }}>We're now running a full credit check. This page will update automatically.</p>
+          </div>
+        )}
+        <div style={{ maxWidth: 760, margin: '40px auto', padding: '0 20px', display: overlayHidden ? 'none' : 'block' }}>
+          <pricing-offer-selector
+            ref={pricingRef}
+            application-id={applicationId}
+            api-base-url={API.pricing}
+            session-token={sessionStorage.getItem('sessionToken')}
+          />
+        </div>
+      </>
     );
   }
 

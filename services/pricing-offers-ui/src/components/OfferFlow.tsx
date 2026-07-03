@@ -115,7 +115,7 @@ export default function OfferFlow({ apiBaseUrl, applicationId, sessionToken, app
     )
   }
 
-  if (currentStep === 'consent' && selectedOffer) {
+  if ((currentStep === 'consent' || currentStep === 'submitting') && selectedOffer) {
     return (
       <ConsentStep
         selectedOffer={selectedOffer}
