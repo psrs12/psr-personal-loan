@@ -29,6 +29,10 @@ public class CreateApplicationUseCase {
     private final InvitationSessionRepository invitationSessionRepository;
     private final SSNTokenStore ssnTokenStore;
     private final BoltTokenizationPort boltTokenizationPort;
+    private final ApplicationExpiryConfigRepository applicationExpiryConfigRepository;
+
+    private static final String DEFAULT_PRODUCT_TYPE = "PERSONAL_LOAN";
+    private static final int DEFAULT_EXPIRY_THRESHOLD_DAYS = 30;
 
     public CreateApplicationUseCase(ApplicationRepository applicationRepository,
                                      ApplicantRepository applicantRepository,
@@ -39,7 +43,8 @@ public class CreateApplicationUseCase {
                                      ApplicationIntakeContextRepository applicationIntakeContextRepository,
                                      InvitationSessionRepository invitationSessionRepository,
                                      SSNTokenStore ssnTokenStore,
-                                     BoltTokenizationPort boltTokenizationPort) {
+                                     BoltTokenizationPort boltTokenizationPort,
+                                     ApplicationExpiryConfigRepository applicationExpiryConfigRepository) {
         this.applicationRepository = applicationRepository;
         this.applicantRepository = applicantRepository;
         this.loanRequestRepository = loanRequestRepository;
@@ -50,6 +55,7 @@ public class CreateApplicationUseCase {
         this.invitationSessionRepository = invitationSessionRepository;
         this.ssnTokenStore = ssnTokenStore;
         this.boltTokenizationPort = boltTokenizationPort;
+        this.applicationExpiryConfigRepository = applicationExpiryConfigRepository;
     }
 
     @Transactional
@@ -80,6 +86,8 @@ public class CreateApplicationUseCase {
         }
 
         Application application = Application.create(command.intakeId(), ApplicationSource.INVITATION);
+        applyExpiryThreshold(application);
+        advanceToSubmitted(application);
         applicationRepository.save(application);
 
         persistApplicant(application.getApplicationId(), command);
@@ -93,6 +101,8 @@ public class CreateApplicationUseCase {
 
     private Application createDirect(CreateApplicationCommand command) {
         Application application = Application.createDirect();
+        applyExpiryThreshold(application);
+        advanceToSubmitted(application);
         applicationRepository.save(application);
 
         persistApplicant(application.getApplicationId(), command);
@@ -101,6 +111,27 @@ public class CreateApplicationUseCase {
         publishEvent(application);
 
         return application;
+    }
+
+    /**
+     * This use case receives the complete ITA payload (employment, income, loan details) in a
+     * single call, so the applicant has effectively finished and submitted their application by
+     * the time execute() runs. Advance the newly created application through the full
+     * CREATED -> IN_PROGRESS -> READY_FOR_SUBMISSION -> SUBMITTED chain so downstream consumers
+     * of ApplicationCreatedEvent (pricing-orchestration-service) can validly move it to
+     * PROCESSING per the state machine in docs/architecture/002-application-state-machine.md.
+     */
+    private void advanceToSubmitted(Application application) {
+        application.transitionTo(ApplicationStatus.IN_PROGRESS);
+        application.transitionTo(ApplicationStatus.READY_FOR_SUBMISSION);
+        application.transitionTo(ApplicationStatus.SUBMITTED);
+    }
+
+    private void applyExpiryThreshold(Application application) {
+        int thresholdDays = applicationExpiryConfigRepository
+                .findExpiryThresholdDays(DEFAULT_PRODUCT_TYPE, application.getApplicationSource().name())
+                .orElse(DEFAULT_EXPIRY_THRESHOLD_DAYS);
+        application.applyExpiryThreshold(thresholdDays);
     }
 
     private void validateSsnToken(String token) {

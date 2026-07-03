@@ -98,7 +98,14 @@ public class KafkaPricingEventPublisher implements PricingEventPublisher {
                 Map.of("applicationId", applicationId, "documents", documents));
     }
 
-    private void publish(UUID applicationId, String eventType, Object payload) {
-        kafkaTemplate.send(pricingEventsTopic, applicationId.toString(), payload);
+    // The platform event envelope standard (docs/architecture/005-event-driven-architecture.md
+    // section 7) requires every event to carry its eventType. Consumers (e.g.
+    // FinalDecisionApprovedConsumer) key off this field to distinguish event types delivered on
+    // the shared pricing-events topic, so it must be included on the wire, not just passed
+    // in-process and discarded.
+    private void publish(UUID applicationId, String eventType, Map<String, Object> payload) {
+        Map<String, Object> message = new java.util.HashMap<>(payload);
+        message.put("eventType", eventType);
+        kafkaTemplate.send(pricingEventsTopic, applicationId.toString(), message);
     }
 }

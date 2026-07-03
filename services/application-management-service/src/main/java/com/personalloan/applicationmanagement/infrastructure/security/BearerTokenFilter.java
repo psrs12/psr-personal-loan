@@ -41,6 +41,12 @@ public class BearerTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            // CORS preflight requests carry no Authorization header; let them pass through
+            // so Spring's CORS support can respond. Actual requests are still authenticated.
+            filterChain.doFilter(request, response);
+            return;
+        }
         boolean isPost = "POST".equalsIgnoreCase(request.getMethod());
         boolean isApplicationIntake = isPost && path.matches(".*/applications/?$");
         boolean isApiDocs = path.contains("/swagger-ui") || path.contains("/v3/api-docs");

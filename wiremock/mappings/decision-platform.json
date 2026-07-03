@@ -12,7 +12,7 @@
           "Content-Type": "application/json"
         },
         "jsonBody": {
-          "outcome": "APPROVED",
+          "outcome": "OFFERS_GENERATED",
           "offers": [
             {
               "pricingOfferId": "pricing-offer-mock-001",

@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { getDeclarations, submitESign } from '../api/client.js';
+import { getDeclarations, getSelectedOffer, submitESign } from '../api/client.js';
+
+const DECLARATIONS_RETRY_DELAY_MS = 2000;
+const DECLARATIONS_MAX_ATTEMPTS = 5;
 
 function fmt(value, prefix = '') {
   if (value === null || value === undefined) return '—';
@@ -14,18 +17,39 @@ export default function OfferAcceptanceMfe({ applicationId, application }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [offer, setOffer] = useState(null);
 
   useEffect(() => {
-    getDeclarations(applicationId)
-      .then(data => {
+    let cancelled = false;
+
+    // The offer-acceptance session is created asynchronously from a Kafka event fired when
+    // the application reaches APPROVED, so it may not exist yet the instant this page loads.
+    // Retry a few times before surfacing an error to the applicant.
+    async function loadDeclarations(attempt) {
+      try {
+        const data = await getDeclarations(applicationId);
+        if (cancelled) return;
         const list = Array.isArray(data) ? data : (data.declarations ?? []);
         setDeclarations(list);
         const initial = {};
         list.forEach(d => { initial[d.declarationId ?? d.id] = false; });
         setChecked(initial);
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+        setLoading(false);
+      } catch (e) {
+        if (cancelled) return;
+        if (e.status === 404 && attempt < DECLARATIONS_MAX_ATTEMPTS) {
+          setTimeout(() => loadDeclarations(attempt + 1), DECLARATIONS_RETRY_DELAY_MS);
+          return;
+        }
+        setError(e.message);
+        setLoading(false);
+      }
+    }
+
+    loadDeclarations(1);
+    getSelectedOffer(applicationId).then(data => { if (!cancelled) setOffer(data); }).catch(() => {});
+
+    return () => { cancelled = true; };
   }, [applicationId]);
 
   function toggle(id) {
@@ -53,13 +77,13 @@ export default function OfferAcceptanceMfe({ applicationId, application }) {
     }
   }
 
-  // Loan details from application aggregate
-  const loan = application?.loanRequest ?? {};
-  const amount = loan.requestedAmount ?? application?.requestedAmount;
-  const term = loan.requestedTermMonths ?? loan.term ?? application?.requestedTermMonths;
-  const purpose = loan.loanPurpose ?? application?.loanPurpose;
-  const apr = application?.offeredApr ?? application?.apr ?? null;
-  const monthlyPayment = application?.monthlyPayment ?? null;
+  // Loan details from the applicant's confirmed pricing offer (pricing-orchestration-service
+  // owns offer data; application-management-service's status response has no loan fields).
+  const amount = offer?.approvedAmount ?? null;
+  const term = offer?.termMonths ?? null;
+  const purpose = application?.loanPurpose ?? null;
+  const apr = offer?.apr ?? null;
+  const monthlyPayment = offer?.monthlyRepayment ?? null;
 
   return (
     <div>

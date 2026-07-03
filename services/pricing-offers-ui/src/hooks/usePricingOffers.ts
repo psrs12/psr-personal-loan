@@ -23,6 +23,7 @@ export function usePricingOffers(apiBaseUrl: string, applicationId: string, sess
 
     fetch(`${apiBaseUrl}/applications/${applicationId}/pricing-offers`, {
       headers: { Authorization: `Bearer ${sessionToken}` },
+      cache: 'no-store',
     })
       .then(async res => {
         if (!res.ok) throw new Error(`Failed to load offers (${res.status})`)

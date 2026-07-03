@@ -1,5 +1,6 @@
 package com.personalloan.pricingorchestration.api.common;
 
+import com.personalloan.pricingorchestration.application.pricing.OfferSelectionNotFoundException;
 import com.personalloan.pricingorchestration.application.pricing.PricingOfferExpiredException;
 import com.personalloan.pricingorchestration.application.pricing.PricingOfferNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PricingOfferNotFoundException.class)
     public ResponseEntity<ErrorResponse> handlePricingOfferNotFound(PricingOfferNotFoundException ex) {
         return response(HttpStatus.NOT_FOUND, "PRICING_OFFER_NOT_FOUND", ex.getMessage());
+    }
+
+    @ExceptionHandler(OfferSelectionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleOfferSelectionNotFound(OfferSelectionNotFoundException ex) {
+        return response(HttpStatus.NOT_FOUND, "OFFER_SELECTION_NOT_FOUND", ex.getMessage());
     }
 
     @ExceptionHandler(PricingOfferExpiredException.class)

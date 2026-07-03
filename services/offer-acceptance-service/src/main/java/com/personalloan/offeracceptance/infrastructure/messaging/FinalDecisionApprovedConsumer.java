@@ -22,8 +22,8 @@ public class FinalDecisionApprovedConsumer {
 
     @KafkaListener(topics = "${kafka.topics.pricing-events}", groupId = "${spring.kafka.consumer.group-id}")
     public void onFinalDecisionApproved(Map<String, Object> event) {
-        String outcome = (String) event.get("outcome");
-        if (!"APPROVED".equals(outcome)) {
+        String eventType = (String) event.get("eventType");
+        if (!"FinalDecisionApproved".equals(eventType)) {
             return;
         }
         UUID applicationId = UUID.fromString((String) event.get("applicationId"));

@@ -19,7 +19,9 @@ async function handleResponse(res) {
       const body = await res.json();
       detail = body.detail ?? body.message ?? detail;
     } catch (_) {}
-    throw new Error(detail);
+    const err = new Error(detail);
+    err.status = res.status;
+    throw err;
   }
   if (res.status === 204) return null;
   return res.json();
@@ -92,6 +94,15 @@ export async function login(applicationId, last4SSN, dateOfBirth) {
 export async function getApplication(applicationId) {
   const res = await fetch(`${API.appManagement}/applications/${applicationId}/status`, {
     headers: authHeaders(),
+    cache: 'no-store',
+  });
+  return handleResponse(res);
+}
+
+export async function getSelectedOffer(applicationId) {
+  const res = await fetch(`${API.pricing}/applications/${applicationId}/selected-offer`, {
+    headers: authHeaders(),
+    cache: 'no-store',
   });
   return handleResponse(res);
 }
@@ -99,15 +110,16 @@ export async function getApplication(applicationId) {
 export async function getDeclarations(applicationId) {
   const res = await fetch(`${API.offerAcceptance}/applications/${applicationId}/declarations`, {
     headers: authHeaders(),
+    cache: 'no-store',
   });
   return handleResponse(res);
 }
 
-export async function submitESign(applicationId, declarationsAccepted) {
+export async function submitESign(applicationId, acceptedDeclarationIds) {
   const res = await fetch(`${API.offerAcceptance}/applications/${applicationId}/esign`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ declarationsAccepted }),
+    body: JSON.stringify({ acceptedDeclarationIds }),
   });
   return handleResponse(res);
 }

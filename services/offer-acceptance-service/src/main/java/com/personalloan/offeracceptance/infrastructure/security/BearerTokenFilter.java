@@ -7,6 +7,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -28,6 +30,8 @@ import java.util.regex.Pattern;
 @Component
 public class BearerTokenFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(BearerTokenFilter.class);
+
     private static final Pattern APPLICATION_ID_IN_PATH =
             Pattern.compile("/applications/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})");
 
@@ -41,6 +45,10 @@ public class BearerTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         boolean isApiDocs = path.contains("/swagger-ui") || path.contains("/v3/api-docs");
         if (path.contains("/actuator") || isApiDocs) {
             filterChain.doFilter(request, response);
@@ -71,6 +79,8 @@ public class BearerTokenFilter extends OncePerRequestFilter {
         if (matcher.find()) {
             UUID pathApplicationId = UUID.fromString(matcher.group(1));
             if (!pathApplicationId.equals(tokenApplicationId)) {
+                log.warn("Rejecting {} {}: token issued for applicationId={} but path applicationId={}",
+                        request.getMethod(), path, tokenApplicationId, pathApplicationId);
                 reject(response, HttpStatus.FORBIDDEN, "FORBIDDEN", "Session token does not grant access to this application");
                 return;
             }

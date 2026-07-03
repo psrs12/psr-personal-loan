@@ -41,6 +41,10 @@ public class BearerTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         boolean isApiDocs = path.contains("/swagger-ui") || path.contains("/v3/api-docs");
         if (path.contains("/actuator") || path.contains("/internal/") || isApiDocs) {
             filterChain.doFilter(request, response);
