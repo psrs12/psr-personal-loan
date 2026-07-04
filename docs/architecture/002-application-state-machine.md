@@ -236,15 +236,21 @@ After the decision phase, applicants access their application via the self-servi
 1. Applicant submits `applicationId + last4SSN + dateOfBirth` to `POST /applications/login`
 2. `application-management-service` verifies identity via `VerificationPort`
 3. A JJWT session token is returned (30-minute expiry)
-4. The `application-management-ui` shell polls `GET /applications/{id}` every 3 seconds
-5. The shell routes to the appropriate micro-frontend based on `applicationStatus`
+4. The `application-management-ui` shell polls `GET /applications/{id}` every 8 seconds
+5. The shell resolves the appropriate screen for the current `applicationStatus` via a declarative navigation configuration (`src/navigation/navigationConfig.js`) and a resolver (`src/navigation/resolveScreen.js`), rather than hardcoded branching — see `openspec/changes/configurable-navigation-flow/`
 
-| Application Status | Micro-Frontend Shown |
+| Application Status | Screen Shown |
 |-------------------|-----------------------|
 | APPROVED | `OfferAcceptanceMfe` — declarations + e-sign (application-management-ui) |
-| DECLINED | `DenialMfe` — adverse action information (application-management-ui) |
+| DECLINED | Adverse action information block (application-management-ui) |
 | DOCUMENTS_REQUIRED | `<document-upload-manager>` — per-requirement upload slots, progress bar (document-management-ui web component) |
-| OFFER_ACCEPTED / FUNDING_PENDING / FUNDED / COMPLETED | `ConfirmationMfe` — post-sign confirmation (application-management-ui) |
+| OFFER_PENDING | `<pricing-offer-selector>` — offer list, selection, hard-pull consent (pricing-offers-ui web component) |
+| UNDERWRITING / REFERRED | Under-review spinner |
+| OFFER_ACCEPTED / FUNDING_PENDING / FUNDED / COMPLETED | Post-acceptance confirmation block (application-management-ui) |
+| All other non-terminal states (CREATED, IN_PROGRESS, READY_FOR_SUBMISSION, SUBMITTED, PROCESSING, SOFT_PULL_PENDING, PRICING_PENDING, CONSENT_CAPTURED, HARD_PULL_PENDING, DECISION_PENDING) | Processing spinner |
+| CANCELLED / EXPIRED | Inactive-application block |
+
+Note: this table's status values are the authoritative `ApplicationStatus` enum from `application-management-service` (`domain/application/ApplicationStatus.java`), which includes `READY_FOR_SUBMISSION` and `CONSENT_CAPTURED` not previously listed above, and does not include `STARTED` (superseded by `READY_FOR_SUBMISSION`) or `COMPLIANCE_HOLD` (not currently a real application status — see CLAUDE.md's compliance gate description, which is aspirational pending compliance-orchestration-service implementation).
 
 ---
 

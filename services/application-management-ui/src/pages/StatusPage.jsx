@@ -5,15 +5,15 @@ import OfferAcceptanceMfe from '../components/OfferAcceptanceMfe.jsx';
 import { getApplication } from '../api/client.js';
 import { useWebComponentScript, useCustomEvent } from '../hooks/useWebComponent.js';
 import { API } from '../api/config.js';
+import { PROCESSING_STATES, UNDER_REVIEW_STATES } from '../navigation/navigationConfig.js';
+import { resolveScreen, UnmappedApplicationStatusError } from '../navigation/resolveScreen.js';
 
 const POLL_INTERVAL_MS = 8000;
 
-const PROCESSING_STATES = new Set([
-  'SUBMITTED', 'PROCESSING', 'STARTED', 'CREATED', 'IN_PROGRESS',
-  'SOFT_PULL_PENDING', 'PRICING_PENDING', 'HARD_PULL_PENDING', 'DECISION_PENDING',
-]);
-const UNDER_REVIEW_STATES = new Set(['UNDERWRITING', 'COMPLIANCE_HOLD']);
-const POST_ACCEPTANCE_STATES = new Set(['OFFER_ACCEPTED', 'FUNDING_PENDING', 'FUNDED', 'COMPLETED']);
+const WEB_COMPONENT_SCRIPTS = {
+  pricingOffersUiJs: (pricingScript) => pricingScript,
+  documentManagementUiJs: (_pricingScript, documentScript) => documentScript,
+};
 
 export default function StatusPage() {
   const navigate = useNavigate();
@@ -107,41 +107,96 @@ export default function StatusPage() {
 
   const status = application.applicationStatus ?? application.status;
 
+  let descriptor;
+  let resolveError = null;
+  try {
+    descriptor = resolveScreen(status);
+  } catch (e) {
+    if (e instanceof UnmappedApplicationStatusError) {
+      resolveError = e;
+    } else {
+      throw e;
+    }
+  }
+
   return (
     <div className="page-shell">
       <Header />
-      {renderContent(status, application, applicationId, pricingRef, pricingScript, documentScript, offerConfirmed)}
+      {resolveError
+        ? renderUnmappedStatusFallback(resolveError, status)
+        : renderScreen(descriptor, { status, application, applicationId, pricingRef, pricingScript, documentScript, offerConfirmed })}
     </div>
   );
 }
 
-function renderContent(status, application, applicationId, pricingRef, pricingScript, documentScript, offerConfirmed) {
-  if (PROCESSING_STATES.has(status) && status !== 'PROCESSING') {
+function renderUnmappedStatusFallback(error, status) {
+  // eslint-disable-next-line no-console
+  console.error(error);
+  return (
+    <div className="status-center">
+      <div className="spinner" />
+      <h3 style={{ color: '#1a1a1a' }}>Processing</h3>
+      <p style={{ color: '#6b7280' }}>Status: {status}</p>
+    </div>
+  );
+}
+
+function renderScreen(descriptor, ctx) {
+  switch (descriptor.kind) {
+    case 'spinner':
+      return renderSpinner(descriptor);
+    case 'web-component':
+      return renderWebComponent(descriptor, ctx);
+    case 'internal-mfe':
+      return renderInternalMfe(descriptor, ctx);
+    case 'static-block':
+      return renderStaticBlock(descriptor, ctx);
+    default:
+      return renderUnmappedStatusFallback(new Error(`Unknown descriptor kind: ${descriptor.kind}`), ctx.status);
+  }
+}
+
+function renderSpinner(descriptor) {
+  return (
+    <div className="status-center">
+      <div className="spinner" />
+      <h3 style={{ color: '#1a1a1a' }}>{descriptor.label}</h3>
+      <p style={{ color: '#6b7280' }}>
+        {descriptor.description.split('\n').map((line, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <br />}
+            {line}
+          </React.Fragment>
+        ))}
+      </p>
+    </div>
+  );
+}
+
+function renderWebComponent(descriptor, { status, applicationId, pricingRef, pricingScript, documentScript, offerConfirmed }) {
+  const script = WEB_COMPONENT_SCRIPTS[descriptor.scriptUrlKey](pricingScript, documentScript);
+  const apiBaseUrl = API[descriptor.apiBaseUrlKey];
+  const sessionToken = sessionStorage.getItem('sessionToken');
+
+  if (script.error) {
     return (
-      <div className="status-center">
-        <div className="spinner" />
-        <h3 style={{ color: '#1a1a1a' }}>Application Under Review</h3>
-        <p style={{ color: '#6b7280' }}>Your application is being processed. This usually takes a few minutes.<br />This page will update automatically.</p>
+      <div className="card">
+        <div className="alert-error">Unable to load {descriptor.tag}: {script.error}</div>
       </div>
     );
   }
 
-  if (status === 'OFFER_PENDING') {
-    const overlayHidden = offerConfirmed || pricingScript.error || !pricingScript.loaded;
+  if (descriptor.tag === 'pricing-offer-selector') {
+    const overlayHidden = offerConfirmed || !script.loaded;
     return (
       <>
-        {pricingScript.error && (
-          <div className="card">
-            <div className="alert-error">Unable to load offer selector: {pricingScript.error}</div>
-          </div>
-        )}
-        {!pricingScript.error && !pricingScript.loaded && (
+        {!script.loaded && (
           <div className="status-center">
             <div className="spinner" />
             <p style={{ color: '#6b7280' }}>Loading your offers...</p>
           </div>
         )}
-        {!pricingScript.error && offerConfirmed && (
+        {offerConfirmed && (
           <div className="status-center">
             <div className="spinner" />
             <h3 style={{ color: '#1a1a1a' }}>Offer Confirmed</h3>
@@ -152,15 +207,36 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
           <pricing-offer-selector
             ref={pricingRef}
             application-id={applicationId}
-            api-base-url={API.pricing}
-            session-token={sessionStorage.getItem('sessionToken')}
+            api-base-url={apiBaseUrl}
+            session-token={sessionToken}
           />
         </div>
       </>
     );
   }
 
-  if (status === 'APPROVED') {
+  if (!script.loaded) {
+    return (
+      <div className="status-center">
+        <div className="spinner" />
+        <p style={{ color: '#6b7280' }}>Loading document portal...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ maxWidth: 800, margin: '40px auto', padding: '0 20px' }}>
+      <document-upload-manager
+        application-id={applicationId}
+        api-base-url={apiBaseUrl}
+        session-token={sessionToken}
+      />
+    </div>
+  );
+}
+
+function renderInternalMfe(descriptor, { applicationId, application }) {
+  if (descriptor.component === 'OfferAcceptanceMfe') {
     return (
       <div className="card" style={{ maxWidth: 700 }}>
         <h2>Your Loan Has Been Approved</h2>
@@ -170,67 +246,11 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
       </div>
     );
   }
+  return null;
+}
 
-  if (status === 'DOCUMENTS_REQUIRED') {
-    if (documentScript.error) {
-      return (
-        <div className="card">
-          <div className="alert-error">Unable to load document manager: {documentScript.error}</div>
-        </div>
-      );
-    }
-    if (!documentScript.loaded) {
-      return (
-        <div className="status-center">
-          <div className="spinner" />
-          <p style={{ color: '#6b7280' }}>Loading document portal...</p>
-        </div>
-      );
-    }
-    return (
-      <div style={{ maxWidth: 800, margin: '40px auto', padding: '0 20px' }}>
-        <document-upload-manager
-          application-id={applicationId}
-          api-base-url={API.document}
-          session-token={sessionStorage.getItem('sessionToken')}
-        />
-      </div>
-    );
-  }
-
-  if (UNDER_REVIEW_STATES.has(status)) {
-    return (
-      <div className="status-center">
-        <div className="spinner" />
-        <h3 style={{ color: '#1a1a1a' }}>Under Review by Our Team</h3>
-        <p style={{ color: '#6b7280' }}>Your application is being reviewed by our underwriting team.<br />You will be notified once a decision has been made.</p>
-      </div>
-    );
-  }
-
-  if (POST_ACCEPTANCE_STATES.has(status)) {
-    const statusLabel = {
-      OFFER_ACCEPTED: 'Offer Accepted',
-      FUNDING_PENDING: 'Funding in Progress',
-      FUNDED: 'Funded',
-      COMPLETED: 'Completed',
-    }[status] ?? status;
-
-    return (
-      <div className="status-center">
-        <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>✓</div>
-        <h2 style={{ color: '#15803d' }}>{statusLabel}</h2>
-        <p style={{ color: '#6b7280', maxWidth: 460, margin: '0 auto' }}>
-          {status === 'OFFER_ACCEPTED' && 'Your offer has been accepted. We are now arranging the transfer of funds.'}
-          {status === 'FUNDING_PENDING' && 'Your loan funds are being prepared and will be disbursed shortly.'}
-          {status === 'FUNDED' && 'Your loan has been funded. The funds have been sent to your nominated account.'}
-          {status === 'COMPLETED' && 'Your loan application is complete. Thank you for choosing us.'}
-        </p>
-      </div>
-    );
-  }
-
-  if (status === 'DECLINED') {
+function renderStaticBlock(descriptor, { status }) {
+  if (descriptor.block === 'declined') {
     return (
       <div className="status-center" style={{ maxWidth: 520 }}>
         <div style={{ fontSize: '3rem', color: '#b71c1c', marginBottom: 16 }}>✗</div>
@@ -246,19 +266,27 @@ function renderContent(status, application, applicationId, pricingRef, pricingSc
     );
   }
 
-  if (status === 'CANCELLED' || status === 'EXPIRED') {
+  if (descriptor.block === 'cancelled-expired') {
     return (
       <div className="status-center">
-        <h2 style={{ color: '#6b7280' }}>Application {status === 'CANCELLED' ? 'Cancelled' : 'Expired'}</h2>
+        <h2 style={{ color: '#6b7280' }}>Application {descriptor.label}</h2>
         <p style={{ color: '#9ca3af' }}>This application is no longer active. Please contact support if you believe this is an error.</p>
+      </div>
+    );
+  }
+
+  if (descriptor.block === 'post-acceptance') {
+    return (
+      <div className="status-center">
+        <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>✓</div>
+        <h2 style={{ color: '#15803d' }}>{descriptor.label}</h2>
+        <p style={{ color: '#6b7280', maxWidth: 460, margin: '0 auto' }}>{descriptor.message}</p>
       </div>
     );
   }
 
   return (
     <div className="status-center">
-      <div className="spinner" />
-      <h3 style={{ color: '#1a1a1a' }}>Processing</h3>
       <p style={{ color: '#6b7280' }}>Status: {status}</p>
     </div>
   );
