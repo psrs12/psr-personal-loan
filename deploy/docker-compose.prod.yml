@@ -148,6 +148,11 @@ services:
     restart: unless-stopped
     logging: *default-logging
 
+  offer-acceptance-ui:
+    image: ${IMAGE_REGISTRY_PREFIX}/offer-acceptance-ui:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    logging: *default-logging
+
   # Grafana Alloy — metrics scraping + log forwarding agent
   grafana-alloy:
     image: grafana/alloy:latest

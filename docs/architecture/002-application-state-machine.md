@@ -238,10 +238,11 @@ After the decision phase, applicants access their application via the self-servi
 3. A JJWT session token is returned (30-minute expiry)
 4. The `application-management-ui` shell polls `GET /applications/{id}` every 8 seconds
 5. The shell resolves the appropriate screen for the current `applicationStatus` via a declarative navigation configuration (`src/navigation/navigationConfig.js`) and a resolver (`src/navigation/resolveScreen.js`), rather than hardcoded branching — see `openspec/changes/configurable-navigation-flow/`
+6. The shell is pure orchestration: it looks up one container component per resolved screen kind in `src/navigation/screenRegistry.js` (with `staticBlockRegistry.js` for sub-variants) and renders it — `StatusPage.jsx` contains no per-status or per-component branching. Each functional MFE (`<pricing-offer-selector>`, `<document-upload-manager>`, `<offer-acceptance-flow>`) owns its own loading, ready, and transition rendering; the shell only mounts it with its documented attributes and listens for its completion event — see `openspec/changes/mfe-rendering-ownership/` and `openspec/changes/offer-acceptance-ui/`
 
 | Application Status | Screen Shown |
 |-------------------|-----------------------|
-| APPROVED | `OfferAcceptanceMfe` — declarations + e-sign (application-management-ui) |
+| APPROVED | `<offer-acceptance-flow>` — declarations + e-sign (offer-acceptance-ui web component) |
 | DECLINED | Adverse action information block (application-management-ui) |
 | DOCUMENTS_REQUIRED | `<document-upload-manager>` — per-requirement upload slots, progress bar (document-management-ui web component) |
 | OFFER_PENDING | `<pricing-offer-selector>` — offer list, selection, hard-pull consent (pricing-offers-ui web component) |

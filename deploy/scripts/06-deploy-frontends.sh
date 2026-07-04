@@ -18,6 +18,7 @@ declare -A UI_PROJECTS=(
   ["application-management-ui"]="personal-loan-app-management-ui"
   ["pricing-offers-ui"]="personal-loan-pricing-offers-ui"
   ["document-management-ui"]="personal-loan-document-management-ui"
+  ["offer-acceptance-ui"]="personal-loan-offer-acceptance-ui"
 )
 
 # Backend URL for each UI (set as build-time env var if needed)

@@ -37,6 +37,9 @@
     handle /document-upload-manager* {
         reverse_proxy document-management-ui:80
     }
+    handle /offer-acceptance-flow* {
+        reverse_proxy offer-acceptance-ui:80
+    }
     handle {
         reverse_proxy application-management-ui:80
     }
