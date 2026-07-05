@@ -41,8 +41,11 @@ public class SoftPullOrchestrationService {
 
             pricingRequestAssemblyService.requestPricing(applicationId);
         } catch (Exception e) {
+            // Declines are surfaced as an explicit PricingEngineResponse/FinalDecisionResponse outcome,
+            // never as a thrown exception. Anything caught here is a technical/integration failure
+            // (network, timeout, transient 4xx/5xx), so it must not be mistaken for a credit decline.
+            // Leave the application in its pending status for retry rather than declining it.
             log.error("Soft pull failed for application {}", applicationId, e);
-            applicationManagementPort.updateApplicationStatus(applicationId, "DECLINED");
             eventPublisher.publishSoftPullFailed(applicationId, e.getMessage());
         }
     }

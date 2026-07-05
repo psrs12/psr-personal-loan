@@ -44,12 +44,17 @@ integration:
   decision-platform:
     base-url: ${DECISION_PLATFORM_URL:http://localhost:8087}
     timeout-seconds: 10
+  application-management:
+    base-url: ${APPLICATION_MANAGEMENT_URL:http://localhost:8081}
 
 kafka:
   topics:
     application-events: application-events
     consent-events: consent-events
     pricing-events: pricing-events
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-in-production}
 
 resilience4j:
   circuitbreaker:

@@ -8,6 +8,7 @@ import com.personalloan.applicationmanagement.application.application.GetApplica
 import com.personalloan.applicationmanagement.domain.application.Application;
 import com.personalloan.applicationmanagement.domain.application.ApplicationAuditRecord;
 import com.personalloan.applicationmanagement.domain.application.port.ApplicationRepository;
+import com.personalloan.applicationmanagement.domain.exception.ApplicationNotFoundException;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +38,7 @@ public class ApplicationController {
     @PostMapping
     public ResponseEntity<CreateApplicationResponse> create(
             @RequestHeader("X-Channel-ID") String channelId,
-            @RequestHeader("Authorization") String authorization,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @Valid @RequestBody CreateApplicationRequest request) {
 
         CreateApplicationCommand command = new CreateApplicationCommand(
@@ -51,6 +52,7 @@ public class ApplicationController {
                 request.email(),
                 request.phone(),
                 request.street(),
+                request.addressLine2(),
                 request.city(),
                 request.state(),
                 request.zip(),
@@ -72,6 +74,20 @@ public class ApplicationController {
                 application.getApplicationStatus().name(),
                 application.getApplicationSource().name(),
                 application.getCreatedTimestamp()
+        ));
+    }
+
+    @GetMapping("/{applicationId}/status")
+    public ResponseEntity<ApplicationStatusResponse> getStatus(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable UUID applicationId) {
+
+        Application application = applicationRepository.findByApplicationId(applicationId)
+                .orElseThrow(() -> new ApplicationNotFoundException(applicationId));
+
+        return ResponseEntity.ok(new ApplicationStatusResponse(
+                application.getApplicationId(),
+                application.getApplicationStatus().name()
         ));
     }
 

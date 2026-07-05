@@ -97,7 +97,7 @@ class HardPullOrchestrationServiceTest {
     }
 
     @Test
-    void initiateHardPull_creditManagementFails_declinesAndPublishesFailedEvent() {
+    void initiateHardPull_creditManagementFails_leavesApplicationPendingAndPublishesFailedEvent() {
         PricingRequest assembled = new PricingRequest(applicationId, "soft-ref", BigDecimal.valueOf(10000),
                 36, "DEBT_CONSOLIDATION", BigDecimal.valueOf(60000), "EMPLOYED", null, null);
         when(applicationManagementPort.assembleFromApplicationData(applicationId)).thenReturn(assembled);
@@ -106,7 +106,8 @@ class HardPullOrchestrationServiceTest {
 
         service.initiateHardPull(applicationId, selectedOfferId, null);
 
-        verify(applicationManagementPort).updateApplicationStatus(applicationId, "DECLINED");
+        verify(applicationManagementPort).updateApplicationStatus(applicationId, "HARD_PULL_PENDING");
+        verify(applicationManagementPort, never()).updateApplicationStatus(applicationId, "DECLINED");
         verify(eventPublisher).publishHardPullFailed(eq(applicationId), anyString());
         verify(decisionPlatformPort, never()).requestFinalDecision(any(), any(), any());
     }

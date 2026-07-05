@@ -20,7 +20,8 @@ public class DocumentsCompletedEventConsumer {
         this.applicationRepository = applicationRepository;
     }
 
-    @KafkaListener(topics = "${kafka.topics.document-events}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${kafka.topics.document-events}", groupId = "${spring.kafka.consumer.group-id}",
+                   containerFactory = "documentsCompletedListenerContainerFactory")
     @Transactional
     public void onDocumentsCompleted(DocumentsCompletedEvent event) {
         log.info("Received DocumentsCompleted for application {}", event.applicationId());

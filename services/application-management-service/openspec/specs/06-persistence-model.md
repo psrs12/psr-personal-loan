@@ -112,28 +112,41 @@ CREATE TABLE application
 ## Table: applicant
 
 Applicant personal and contact information as entered by the prospect.
-SSN is encrypted at rest. SSN is never logged or returned in plaintext.
+
+SSN is **not stored in this table**. The raw SSN is verified via the SSN Verification Service
+and then immediately tokenised via the Bolt Tokenisation Platform. Only the opaque `ssn_token`
+(a Bolt reference string) is persisted. The raw SSN is discarded after tokenisation and is
+never written to the database.
+
+SSN is never logged or returned in any API response.
+
+`citizenship` and `employment_status` are stored as VARCHAR to avoid coupling the schema to
+enum ordinal values. Values match the `Citizenship` and `EmploymentStatus` domain enums.
+
+`employer_name` and `employment_status` are nullable — not required when the applicant is RETIRED.
+
+`annual_income` minimum enforced at the API layer (`@DecimalMin("0.00")`).
 
 ```sql
 CREATE TABLE applicant
 (
- applicant_id        UUID          PRIMARY KEY,
- application_id      UUID          NOT NULL,
- first_name          VARCHAR(100)  NOT NULL,
- last_name           VARCHAR(100)  NOT NULL,
- date_of_birth       DATE          NOT NULL,
- citizenship         VARCHAR(50)   NOT NULL,
- ssn_encrypted       BYTEA         NOT NULL,
- email               VARCHAR(200)  NOT NULL,
- phone               VARCHAR(20)   NOT NULL,
- street              VARCHAR(200)  NOT NULL,
- city                VARCHAR(100)  NOT NULL,
- state               VARCHAR(2)    NOT NULL,
- zip                 VARCHAR(10)   NOT NULL,
- employer_name       VARCHAR(200),
- employment_status   VARCHAR(50),
- annual_income       DECIMAL(12,2),
- created_timestamp   TIMESTAMP     NOT NULL,
+ applicant_id        UUID           PRIMARY KEY,
+ application_id      UUID           NOT NULL,
+ first_name          VARCHAR(100)   NOT NULL,
+ last_name           VARCHAR(100)   NOT NULL,
+ date_of_birth       DATE           NOT NULL,
+ citizenship         VARCHAR(50)    NOT NULL,   -- US_CITIZEN | PERMANENT_RESIDENT | DACA | OTHER
+ ssn_token           VARCHAR(255)   NOT NULL,   -- Bolt tokenisation reference; never raw SSN
+ email               VARCHAR(200)   NOT NULL,
+ phone               VARCHAR(20)    NOT NULL,
+ street              VARCHAR(200)   NOT NULL,
+ city                VARCHAR(100)   NOT NULL,
+ state               VARCHAR(2)     NOT NULL,   -- 2-character US state code
+ zip                 VARCHAR(10)    NOT NULL,
+ employer_name       VARCHAR(200),              -- nullable; not required for RETIRED
+ employment_status   VARCHAR(50),               -- EMPLOYED | SELF_EMPLOYED | RETIRED | OTHER
+ annual_income       DECIMAL(12,2),             -- minimum 0.00; validated at API layer
+ created_timestamp   TIMESTAMP      NOT NULL,
  updated_timestamp   TIMESTAMP,
 
  FOREIGN KEY (application_id)

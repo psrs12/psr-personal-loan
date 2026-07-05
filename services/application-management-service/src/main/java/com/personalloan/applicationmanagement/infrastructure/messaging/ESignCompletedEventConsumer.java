@@ -20,7 +20,8 @@ public class ESignCompletedEventConsumer {
         this.applicationRepository = applicationRepository;
     }
 
-    @KafkaListener(topics = "${kafka.topics.offer-acceptance-events}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "${kafka.topics.offer-acceptance-events}", groupId = "${spring.kafka.consumer.group-id}",
+                   containerFactory = "esignCompletedListenerContainerFactory")
     @Transactional
     public void onESignCompleted(ESignCompletedEvent event) {
         log.info("Received ESignCompleted for application {}", event.applicationId());

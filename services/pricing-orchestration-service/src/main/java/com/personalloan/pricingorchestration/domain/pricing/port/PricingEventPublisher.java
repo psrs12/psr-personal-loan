@@ -1,11 +1,13 @@
 package com.personalloan.pricingorchestration.domain.pricing.port;
 
 import com.personalloan.pricingorchestration.domain.pricing.FinalDecisionResponse;
+import com.personalloan.pricingorchestration.domain.pricing.event.ConsentCapturedEvent;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface PricingEventPublisher {
+    void publishConsentCaptured(ConsentCapturedEvent event);
     void publishSoftPullInitiated(UUID applicationId);
     void publishSoftPullCompleted(UUID applicationId, String creditReportReferenceId);
     void publishSoftPullFailed(UUID applicationId, String reason);

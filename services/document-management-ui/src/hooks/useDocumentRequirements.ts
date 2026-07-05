@@ -14,6 +14,7 @@ export function useDocumentRequirements(
     setError(null)
     fetch(`${apiBaseUrl}/applications/${applicationId}/documents/requirements`, {
       headers: { Authorization: `Bearer ${sessionToken}` },
+      cache: 'no-store',
     })
       .then(r => {
         if (!r.ok) throw new Error('Failed to load requirements')

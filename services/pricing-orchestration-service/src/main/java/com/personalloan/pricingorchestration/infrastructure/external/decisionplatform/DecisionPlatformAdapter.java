@@ -7,6 +7,7 @@ import com.personalloan.pricingorchestration.domain.pricing.port.DecisionPlatfor
 import com.personalloan.pricingorchestration.infrastructure.external.decisionplatform.dto.*;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -19,12 +20,13 @@ public class DecisionPlatformAdapter implements DecisionPlatformPort {
 
     private final RestClient restClient;
 
+    @Autowired
     public DecisionPlatformAdapter(RestClient.Builder builder,
                                     @Value("${integration.decision-platform.base-url}") String baseUrl) {
         this.restClient = builder.baseUrl(baseUrl).build();
     }
 
-    DecisionPlatformAdapter(RestClient restClient) {
+    public DecisionPlatformAdapter(RestClient restClient) {
         this.restClient = restClient;
     }
 

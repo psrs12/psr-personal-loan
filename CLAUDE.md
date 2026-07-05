@@ -27,6 +27,7 @@ The platform supports the full Personal Loan application lifecycle using:
 | `pricing-orchestration-service` | 8082 | Soft pull, offer pricing, hard pull, final decision routing |
 | `offer-acceptance-service` | 8085 | Declarations, e-signature, ESignCompleted event |
 | `document-service` | 8084 | Document requirements, upload, virus scan lifecycle, completion detection |
+| `compliance-orchestration-service` | 8086 | Compliance gates: AML screening (Gate 1 + 5), FCRA consent audit (Gate 2), adverse action (Gate 3), TILA disclosure audit (Gate 4), COMPLIANCE_HOLD management |
 
 **Frontend**
 
@@ -129,10 +130,22 @@ Business capability specifications are stored under:
 openspec/
 ```
 
+**Capability specs** — authoritative per-capability specifications:
+
 | Location | Status | Purpose |
 |----------|--------|---------|
-| `openspec/application-management/` | Active | Core application management capability spec |
+| `openspec/application-management/` | Active | Application lifecycle, intake, state machine, applicant login |
+| `openspec/pricing-orchestration/` | Active | Soft pull, offer selection, hard pull, final decision routing |
+| `openspec/offer-acceptance/` | Active | Declarations, e-sign, ESignCompleted event |
+| `openspec/document-collection/` | Active | Document requirements, ACL mapping, upload, virus scan, completion |
+| `openspec/compliance-orchestration/` | Planned | Compliance gates — created when implementation starts |
+
+**Active changes** — proposed changes with tasks and delta specs:
+
+| Location | Status | Purpose |
+|----------|--------|---------|
 | `openspec/changes/post-decision-flow/` | Active | Post-decision flows: offer acceptance, document collection, applicant login |
+| `openspec/changes/compliance-orchestration/` | Proposed | Compliance gates: AML, FCRA consent, adverse action, TILA disclosure |
 
 Each change directory contains:
 
@@ -140,7 +153,7 @@ Each change directory contains:
 proposal.md       — what and why
 design.md         — how
 tasks.md          — implementation steps with completion tracking
-specs/            — per-capability detailed specs
+specs/            — per-capability delta specs
 ```
 
 OpenSpec defines:
@@ -163,9 +176,11 @@ OpenSpec defines:
 
 Read `docs/architecture/002-application-state-machine.md` before any state-related work.
 
-Current states: `CREATED → STARTED → IN_PROGRESS → SUBMITTED → PROCESSING → APPROVED | DECLINED | REFERRED | DOCUMENTS_REQUIRED → UNDERWRITING → OFFER_ACCEPTED → FUNDING_PENDING → FUNDED → COMPLETED`
+Current states: `CREATED → STARTED → IN_PROGRESS → SUBMITTED → PROCESSING → APPROVED | DECLINED | REFERRED | DOCUMENTS_REQUIRED → UNDERWRITING → OFFER_ACCEPTED → [COMPLIANCE_HOLD] → FUNDING_PENDING → FUNDED → COMPLETED`
 
 Terminal states: `DECLINED`, `CANCELLED`, `EXPIRED`, `COMPLETED`
+
+`COMPLIANCE_HOLD` is a non-terminal suspended state set by `compliance-orchestration-service` when a pre-funding AML check fails. Valid transitions out: `COMPLIANCE_HOLD → FUNDING_PENDING` (hold released) or `COMPLIANCE_HOLD → DECLINED` (escalated).
 
 ## Event Contract
 
@@ -190,6 +205,27 @@ In the ITA flow, **name and address are prefilled from the invitation and are re
 Applicant self-service login is `POST /applications/login` (public endpoint — no auth header). Returns a JJWT session token (30-minute expiry). Login is rejected for terminal application states.
 
 Verification is currently handled by `StubVerificationAdapter` (feature flag: `verification.stub.enabled=true`). Production implementation will replace this via `VerificationPort`.
+
+## Compliance Gates
+
+`compliance-orchestration-service` owns all five compliance gates. No other service may implement compliance gate logic.
+
+| Gate | Trigger | Type | Regulation |
+|------|---------|------|-----------|
+| Gate 1 — AML Pre-Screening | `ApplicationSubmitted` event | Async (Kafka) | Bank Secrecy Act |
+| Gate 2 — FCRA Consent Audit | `POST /compliance/fcra-consent` before hard pull | Sync (REST — blocking) | FCRA |
+| Gate 3 — Adverse Action | `FinalDecisionDeclined` event | Async (Kafka) | FCRA / ECOA Reg B |
+| Gate 4 — TILA Disclosure Audit | `ESignCompleted` event | Async (Kafka) | TILA / Reg Z |
+| Gate 5 — Pre-Funding AML Re-Check | `FundingRequested` event | Async (Kafka) | Bank Secrecy Act |
+
+Rules:
+- Hard pull must NOT be initiated without a confirmed FCRA consent record (Gate 2). `pricing-orchestration-service` must call `POST /compliance/fcra-consent` and await `200 OK` before firing the hard pull.
+- The `ESignCompleted` event must include TILA fields (`apr`, `totalOfPayments`, `financeCharge`, `loanTerm`). `offer-acceptance-service` sources these from the `ConfirmedOffer` record.
+- Adverse action reason wording lives only in `AdverseActionReasonMapper` inside `compliance-orchestration-service`. Do not add adverse action reason descriptions to any other service.
+- FCRA consent records and TILA audit records are immutable — no update or delete operations are permitted after creation.
+- Compliance records must be retained for a minimum of 7 years.
+
+Read `openspec/changes/compliance-orchestration/` before any compliance-related implementation.
 
 ---
 

@@ -1,0 +1,50 @@
+{
+    auto_https off
+}
+
+# Self-signed cert for bare IP — generate with:
+#   mkdir -p deploy/certs
+#   openssl req -x509 -newkey rsa:4096 -keyout deploy/certs/key.pem \
+#     -out deploy/certs/cert.pem -days 365 -nodes \
+#     -subj "/CN=129.146.21.16" \
+#     -addext "subjectAltName=IP:129.146.21.16"
+# Then add volume mount to Caddy in docker-compose.prod.yml:
+#   - ./certs:/etc/caddy/certs:ro
+
+:443 {
+
+    tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
+
+    header X-Content-Type-Options "nosniff"
+    header X-Frame-Options "DENY"
+    header Referrer-Policy "strict-origin-when-cross-origin"
+
+    handle /api/v1/application-management/* {
+        reverse_proxy application-management-service:8081
+    }
+    handle /api/v1/pricing-orchestration/* {
+        reverse_proxy pricing-orchestration-service:8082
+    }
+    handle /api/v1/offer-acceptance/* {
+        reverse_proxy offer-acceptance-service:8085
+    }
+    handle /api/v1/document/* {
+        reverse_proxy document-service:8084
+    }
+    handle /pricing-offer-selector* {
+        reverse_proxy pricing-offers-ui:80
+    }
+    handle /document-upload-manager* {
+        reverse_proxy document-management-ui:80
+    }
+    handle /offer-acceptance-flow* {
+        reverse_proxy offer-acceptance-ui:80
+    }
+    handle {
+        reverse_proxy application-management-ui:80
+    }
+}
+
+:80 {
+    respond "HTTPS required. Connect to https://129.146.21.16" 426
+}

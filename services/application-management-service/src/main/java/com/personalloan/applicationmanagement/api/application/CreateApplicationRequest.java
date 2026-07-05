@@ -11,18 +11,19 @@ import java.util.UUID;
 public record CreateApplicationRequest(
         UUID intakeId,
 
-        @NotBlank String ssnVerificationToken,
+        String ssnVerificationToken,
         @NotBlank @Pattern(regexp = "\\d{9}", message = "SSN must be 9 digits") String ssn,
 
         @NotBlank String firstName,
         @NotBlank String lastName,
         @NotNull LocalDate dateOfBirth,
-        @NotNull Citizenship citizenship,
+        Citizenship citizenship,
 
         @NotBlank String email,
         @NotBlank String phone,
 
         @NotBlank String street,
+        String addressLine2,
         @NotBlank String city,
         @NotBlank @Size(min = 2, max = 2) String state,
         @NotBlank String zip,

@@ -1,6 +1,7 @@
 package com.personalloan.pricingorchestration.infrastructure.messaging;
 
 import com.personalloan.pricingorchestration.domain.pricing.FinalDecisionResponse;
+import com.personalloan.pricingorchestration.domain.pricing.event.ConsentCapturedEvent;
 import com.personalloan.pricingorchestration.domain.pricing.port.PricingEventPublisher;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,11 +16,19 @@ public class KafkaPricingEventPublisher implements PricingEventPublisher {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String pricingEventsTopic;
+    private final String consentEventsTopic;
 
     public KafkaPricingEventPublisher(KafkaTemplate<String, Object> kafkaTemplate,
-                                       @Value("${kafka.topics.pricing-events}") String pricingEventsTopic) {
+                                       @Value("${kafka.topics.pricing-events}") String pricingEventsTopic,
+                                       @Value("${kafka.topics.consent-events}") String consentEventsTopic) {
         this.kafkaTemplate = kafkaTemplate;
         this.pricingEventsTopic = pricingEventsTopic;
+        this.consentEventsTopic = consentEventsTopic;
+    }
+
+    @Override
+    public void publishConsentCaptured(ConsentCapturedEvent event) {
+        kafkaTemplate.send(consentEventsTopic, event.applicationId().toString(), event);
     }
 
     @Override
@@ -89,7 +98,14 @@ public class KafkaPricingEventPublisher implements PricingEventPublisher {
                 Map.of("applicationId", applicationId, "documents", documents));
     }
 
-    private void publish(UUID applicationId, String eventType, Object payload) {
-        kafkaTemplate.send(pricingEventsTopic, applicationId.toString(), payload);
+    // The platform event envelope standard (docs/architecture/005-event-driven-architecture.md
+    // section 7) requires every event to carry its eventType. Consumers (e.g.
+    // FinalDecisionApprovedConsumer) key off this field to distinguish event types delivered on
+    // the shared pricing-events topic, so it must be included on the wire, not just passed
+    // in-process and discarded.
+    private void publish(UUID applicationId, String eventType, Map<String, Object> payload) {
+        Map<String, Object> message = new java.util.HashMap<>(payload);
+        message.put("eventType", eventType);
+        kafkaTemplate.send(pricingEventsTopic, applicationId.toString(), message);
     }
 }

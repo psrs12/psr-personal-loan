@@ -1,5 +1,7 @@
 server:
   port: 8084
+  servlet:
+    context-path: /api/v1/document
 
 spring:
   application:
@@ -39,6 +41,9 @@ kafka:
 services:
   application-management:
     base-url: ${APPLICATION_MANAGEMENT_URL:http://localhost:8081}
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-in-production}
 
 management:
   endpoints:

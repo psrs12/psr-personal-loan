@@ -32,45 +32,7 @@ The system SHALL persist the credit report reference identifier returned by the 
 
 ---
 
-### Requirement: Pricing Offers Persistence
-The system SHALL persist all pricing offers returned by the Decision Platform (Pricing Engine) against the application.
-
-#### Scenario: All pricing offers persisted
-- **WHEN** pricing offers are received from the Decision Platform
-- **THEN** the system SHALL persist each offer with: `pricing_offer_id`, `approved_amount`, `interest_rate`, `apr`, `term_months`, `monthly_repayment`, `total_repayable`, `offer_expiry_date`, `pricing_model_ref`, `bureau_snapshot_ref`, and `offer_status`
-
-#### Scenario: Pricing offers replaced on re-pricing
-- **WHEN** a re-pricing event occurs due to offer expiry
-- **THEN** the system SHALL mark previous pricing offers as `SUPERSEDED`
-- **THEN** the system SHALL persist the new set of pricing offers as `ACTIVE`
-
----
-
-### Requirement: Offer Selection Persistence
-The system SHALL persist the applicant's selected pricing offer.
-
-#### Scenario: Selected offer recorded
-- **WHEN** an applicant selects a pricing offer
-- **THEN** the system SHALL persist `selected_pricing_offer_id` and `offer_selected_timestamp` against the application
-
-#### Scenario: Selected offer retained through referred path
-- **WHEN** an application is referred to manual underwriting
-- **THEN** the `selected_pricing_offer_id` SHALL remain unchanged throughout the underwriting review
-
----
-
-### Requirement: Consent Record Persistence
-The system SHALL persist explicit consent records for hard pull and offer acceptance.
-
-#### Scenario: Hard pull consent persisted
-- **WHEN** an applicant grants hard pull consent
-- **THEN** the system SHALL persist a consent record with `consent_type: HARD_PULL`, `consent_given_at`, `consent_channel`, and `applicant_reference`
-
-#### Scenario: Offer acceptance consent persisted
-- **WHEN** an applicant accepts the selected offer terms
-- **THEN** the system SHALL persist a consent record with `consent_type: OFFER_ACCEPTANCE`, `consent_given_at`, `consent_channel`, and `selected_pricing_offer_id`
-
----
+> **Note**: Pricing offer, offer selection, and consent record persistence are owned by `pricing-orchestration-service`, not `application-management-service` — see the `pricing-orchestration` capability spec (Decision 8 in design.md). `application-management-service` retains only the Application aggregate itself: status, credit report reference IDs, and campaign offer reference.
 
 ### Requirement: Campaign Offer Reference Persistence
 The system SHALL persist the campaign offer reference from the Offer Management Platform during ITA intake so it is available for the pricing request assembly.

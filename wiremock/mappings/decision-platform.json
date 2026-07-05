@@ -1,0 +1,65 @@
+{
+  "mappings": [
+    {
+      "name": "decision-platform-pricing-evaluate",
+      "request": {
+        "method": "POST",
+        "urlPattern": "/pricing/evaluate"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "outcome": "OFFERS_GENERATED",
+          "offers": [
+            {
+              "pricingOfferId": "pricing-offer-mock-001",
+              "approvedAmount": 10000.00,
+              "interestRate": 8.50,
+              "apr": 9.99,
+              "termMonths": 36,
+              "monthlyRepayment": 318.12,
+              "totalRepayable": 11452.32,
+              "offerExpiryDate": "2026-12-31T23:59:59",
+              "pricingModelRef": "model-mock-001",
+              "bureauSnapshotRef": "bureau-mock-001"
+            },
+            {
+              "pricingOfferId": "pricing-offer-mock-002",
+              "approvedAmount": 10000.00,
+              "interestRate": 10.20,
+              "apr": 11.85,
+              "termMonths": 60,
+              "monthlyRepayment": 213.50,
+              "totalRepayable": 12810.00,
+              "offerExpiryDate": "2026-12-31T23:59:59",
+              "pricingModelRef": "model-mock-001",
+              "bureauSnapshotRef": "bureau-mock-001"
+            }
+          ],
+          "declineReasonCode": null
+        }
+      }
+    },
+    {
+      "name": "decision-platform-final-decision",
+      "request": {
+        "method": "POST",
+        "urlPattern": "/decision/evaluate"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "outcome": "APPROVED",
+          "reasonCode": null,
+          "documents": []
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "mappings": [
+    {
+      "name": "ssn-verify",
+      "request": {
+        "method": "POST",
+        "urlPattern": "/ssn/verify"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "verificationToken": "ssn-verify-token-mock",
+          "expiresAt": "2026-12-31T23:59:59"
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 server:
   port: 8085
+  servlet:
+    context-path: /api/v1/offer-acceptance
 
 spring:
   application:
@@ -28,6 +30,7 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
         spring.json.use.type.headers: false
+        spring.json.value.default.type: java.util.LinkedHashMap
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -36,6 +39,9 @@ kafka:
   topics:
     pricing-events: pricing-events
     offer-acceptance-events: offer-acceptance-events
+
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-in-production}
 
 management:
   endpoints:

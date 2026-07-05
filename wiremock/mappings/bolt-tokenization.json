@@ -1,0 +1,20 @@
+{
+  "mappings": [
+    {
+      "name": "bolt-tokenize",
+      "request": {
+        "method": "POST",
+        "urlPattern": "/tokenize"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "token": "bolt-token-mock-0001"
+        }
+      }
+    }
+  ]
+}

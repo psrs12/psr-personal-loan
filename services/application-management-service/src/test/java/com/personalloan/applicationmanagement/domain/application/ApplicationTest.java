@@ -42,7 +42,8 @@ class ApplicationTest {
     void isActive_returnsFalse_forApprovedStatus() {
         Application application = Application.reconstitute(
                 UUID.randomUUID(), null, ApplicationSource.DIRECT,
-                ApplicationStatus.APPROVED, java.time.LocalDateTime.now(), null
+                ApplicationStatus.APPROVED, java.time.LocalDateTime.now(), java.time.LocalDateTime.now(),
+                null, null, null, null, null
         );
 
         assertThat(application.isActive()).isFalse();
@@ -52,7 +53,8 @@ class ApplicationTest {
     void isActive_returnsFalse_forDeclinedStatus() {
         Application application = Application.reconstitute(
                 UUID.randomUUID(), null, ApplicationSource.DIRECT,
-                ApplicationStatus.DECLINED, java.time.LocalDateTime.now(), null
+                ApplicationStatus.DECLINED, java.time.LocalDateTime.now(), java.time.LocalDateTime.now(),
+                null, null, null, null, null
         );
 
         assertThat(application.isActive()).isFalse();

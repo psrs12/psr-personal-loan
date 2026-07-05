@@ -154,6 +154,8 @@ Identity Verification Platform
 
 Fraud Platform
 
+Fraud / AML Platform
+
 Credit Management Platform
 
 Decision Platform
@@ -746,24 +748,88 @@ Support Compliance Reporting
 
 ---
 
+# Capability 14 – Compliance Orchestration
+
+## Purpose
+
+Enforce regulatory compliance gates at defined points in the acquisition workflow.
+
+The capability owns compliance gate execution, consent audit records, adverse action notice generation, disclosure audit records, and compliance hold management. It does not own credit policy, decisioning, or offer pricing.
+
+---
+
+## Compliance Gates
+
+Gate 1 — AML Pre-Screening
+
+Gate 2 — FCRA Credit Pull Consent Audit
+
+Gate 3 — Adverse Action Notice (FCRA / ECOA)
+
+Gate 4 — TILA Disclosure Audit
+
+Gate 5 — Pre-Funding AML Re-Check
+
+---
+
+## Functions
+
+Perform AML and sanctions screening via Fraud / AML Platform
+
+Record FCRA credit pull consent before hard pull initiation
+
+Generate and deliver FCRA / ECOA adverse action notices on declined decisions
+
+Record TILA disclosure audit at e-sign (APR, total of payments, finance charge, loan term)
+
+Perform AML re-check before funding and manage compliance holds
+
+Map Decision Platform reason codes to ECOA-compliant adverse action descriptions
+
+Manage COMPLIANCE_HOLD application state via application-management-service
+
+---
+
+## Regulated Obligations
+
+FCRA — credit pull consent, adverse action notice
+
+ECOA / Regulation B — adverse action reason codes and delivery
+
+TILA / Regulation Z — disclosure audit at signing
+
+Bank Secrecy Act — AML and sanctions screening
+
+---
+
+## Specification
+
+openspec/changes/compliance-orchestration/
+
+openspec/compliance-orchestration/spec.md (planned)
+
+---
+
 # 7. Capability Ownership Matrix
 
-| Capability              | Owner                          |
-| ----------------------- | ------------------------------ |
-| Application Management  | Acquisition Platform           |
-| Application Intake      | Acquisition Platform           |
-| Identity Verification   | Identity Verification Platform |
-| Fraud Assessment        | Fraud Platform                 |
-| Credit Evaluation       | Credit Management Platform     |
-| Decision Execution      | Decision Platform              |
-| Funding Execution       | Funding Platform               |
-| Loan Booking            | Core Loan Platform             |
-| Offer Management        | Offer Management Platform      |
-| Customer Profile        | Customer Platform              |
-| Document Collection     | Acquisition Platform           |
-| Underwriting Workflow   | Acquisition Platform           |
-| Application Tracking    | Acquisition Platform           |
-| Acquisition Audit Trail | Acquisition Platform           |
+| Capability                      | Owner                          |
+| ------------------------------- | ------------------------------ |
+| Application Management          | Acquisition Platform           |
+| Application Intake              | Acquisition Platform           |
+| Compliance Orchestration        | Acquisition Platform           |
+| Identity Verification           | Identity Verification Platform |
+| Fraud Assessment                | Fraud Platform                 |
+| AML / Sanctions Screening       | Fraud / AML Platform           |
+| Credit Evaluation               | Credit Management Platform     |
+| Decision Execution              | Decision Platform              |
+| Funding Execution               | Funding Platform               |
+| Loan Booking                    | Core Loan Platform             |
+| Offer Management                | Offer Management Platform      |
+| Customer Profile                | Customer Platform              |
+| Document Collection             | Acquisition Platform           |
+| Underwriting Workflow           | Acquisition Platform           |
+| Application Tracking            | Acquisition Platform           |
+| Acquisition Audit Trail         | Acquisition Platform           |
 
 ---
 
@@ -864,3 +930,5 @@ Data Retention
 014-application-tracking-spec.md
 
 015-acquisition-audit-spec.md
+
+016-compliance-orchestration-spec.md

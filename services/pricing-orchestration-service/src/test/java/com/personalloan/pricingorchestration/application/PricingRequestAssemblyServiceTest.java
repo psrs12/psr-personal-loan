@@ -6,6 +6,7 @@ import com.personalloan.pricingorchestration.domain.pricing.PricingRequest;
 import com.personalloan.pricingorchestration.domain.pricing.port.ApplicationManagementPort;
 import com.personalloan.pricingorchestration.domain.pricing.port.DecisionPlatformPort;
 import com.personalloan.pricingorchestration.domain.pricing.port.PricingEventPublisher;
+import com.personalloan.pricingorchestration.domain.pricing.port.PricingOfferRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,12 +26,13 @@ class PricingRequestAssemblyServiceTest {
     @Mock private ApplicationManagementPort applicationManagementPort;
     @Mock private DecisionPlatformPort decisionPlatformPort;
     @Mock private PricingEventPublisher eventPublisher;
+    @Mock private PricingOfferRepository pricingOfferRepository;
 
     private PricingRequestAssemblyService service;
 
     @BeforeEach
     void setUp() {
-        service = new PricingRequestAssemblyService(applicationManagementPort, decisionPlatformPort, eventPublisher);
+        service = new PricingRequestAssemblyService(applicationManagementPort, decisionPlatformPort, eventPublisher, pricingOfferRepository);
     }
 
     @Test
@@ -54,7 +56,7 @@ class PricingRequestAssemblyServiceTest {
 
         service.requestPricing(applicationId);
 
-        verify(applicationManagementPort).persistPricingOffers(eq(applicationId), any());
+        verify(pricingOfferRepository).saveAll(any());
         verify(applicationManagementPort).updateApplicationStatus(applicationId, "OFFER_PENDING");
         verify(eventPublisher).publishPricingOffersReceived(applicationId);
     }
@@ -87,12 +89,14 @@ class PricingRequestAssemblyServiceTest {
         PricingEngineResponse response = new PricingEngineResponse(
                 PricingEngineResponse.PricingOutcome.OFFERS_GENERATED, List.of(), null);
 
+        when(pricingOfferRepository.findByApplicationId(applicationId)).thenReturn(List.of());
         when(applicationManagementPort.assembleFromApplicationData(applicationId)).thenReturn(request);
         when(decisionPlatformPort.requestPricing(request)).thenReturn(response);
 
         service.requestRePricing(applicationId);
 
-        verify(applicationManagementPort).markOffersSuperseded(applicationId);
+        verify(pricingOfferRepository).findByApplicationId(applicationId);
+        verify(pricingOfferRepository).saveAll(List.of());
         verify(decisionPlatformPort).requestPricing(request);
     }
 }

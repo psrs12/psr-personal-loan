@@ -26,10 +26,10 @@ public abstract class BaseAcceptanceTest {
     @Container
     static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.6.0"));
 
-    static WireMockServer offerManagementMock;
-    static WireMockServer customerProfileMock;
-    static WireMockServer ssnVerificationMock;
-    static WireMockServer boltMock;
+    protected static WireMockServer offerManagementMock;
+    protected static WireMockServer customerProfileMock;
+    protected static WireMockServer ssnVerificationMock;
+    protected static WireMockServer boltMock;
 
     static {
         offerManagementMock = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());

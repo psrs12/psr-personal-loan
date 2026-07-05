@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { PricingOffer, OfferFlowStep } from '../types'
 import { usePricingOffers } from '../hooks/usePricingOffers'
 import OfferList from './OfferList'
@@ -7,13 +7,14 @@ import ConsentStep from './ConsentStep'
 interface Props {
   apiBaseUrl: string
   applicationId: string
+  sessionToken: string
   applicantReference?: string
   onComplete?: (selectedOfferId: string) => void
   onError?: (error: string) => void
 }
 
-export default function OfferFlow({ apiBaseUrl, applicationId, applicantReference, onComplete, onError }: Props) {
-  const { offers, loading, error: fetchError, reload } = usePricingOffers(apiBaseUrl, applicationId)
+export default function OfferFlow({ apiBaseUrl, applicationId, sessionToken, applicantReference, onComplete, onError }: Props) {
+  const { offers, loading, error: fetchError, reload } = usePricingOffers(apiBaseUrl, applicationId, sessionToken)
   const [step, setStep] = useState<OfferFlowStep>('offer-list')
   const [selectedOffer, setSelectedOffer] = useState<PricingOffer | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -39,14 +40,14 @@ export default function OfferFlow({ apiBaseUrl, applicationId, applicantReferenc
     try {
       const selectionRes = await fetch(`${apiBaseUrl}/applications/${applicationId}/offer-selection`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
         body: JSON.stringify({ selectedPricingOfferId: selectedOffer.pricingOfferId }),
       })
       if (!selectionRes.ok) throw new Error(`Offer selection failed (${selectionRes.status})`)
 
       const consentRes = await fetch(`${apiBaseUrl}/applications/${applicationId}/consent`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionToken}` },
         body: JSON.stringify({
           selectedPricingOfferId: selectedOffer.pricingOfferId,
           consentChannel: 'WEB',
@@ -114,7 +115,7 @@ export default function OfferFlow({ apiBaseUrl, applicationId, applicantReferenc
     )
   }
 
-  if (currentStep === 'consent' && selectedOffer) {
+  if ((currentStep === 'consent' || currentStep === 'submitting') && selectedOffer) {
     return (
       <ConsentStep
         selectedOffer={selectedOffer}

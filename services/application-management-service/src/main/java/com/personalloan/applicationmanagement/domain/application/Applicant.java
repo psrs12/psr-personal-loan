@@ -17,6 +17,7 @@ public class Applicant {
     private final String email;
     private final String phone;
     private final String street;
+    private final String addressLine2;
     private final String city;
     private final String state;
     private final String zip;
@@ -27,7 +28,8 @@ public class Applicant {
 
     private Applicant(UUID applicantId, UUID applicationId, String firstName, String lastName,
                        LocalDate dateOfBirth, Citizenship citizenship, String ssnToken,
-                       String email, String phone, String street, String city, String state, String zip,
+                       String email, String phone, String street, String addressLine2,
+                       String city, String state, String zip,
                        String employerName, EmploymentStatus employmentStatus, BigDecimal annualIncome,
                        LocalDateTime createdTimestamp) {
         this.applicantId = applicantId;
@@ -40,6 +42,7 @@ public class Applicant {
         this.email = email;
         this.phone = phone;
         this.street = street;
+        this.addressLine2 = addressLine2;
         this.city = city;
         this.state = state;
         this.zip = zip;
@@ -51,20 +54,22 @@ public class Applicant {
 
     public static Applicant create(UUID applicationId, String firstName, String lastName,
                                     LocalDate dateOfBirth, Citizenship citizenship, String ssnToken,
-                                    String email, String phone, String street, String city, String state, String zip,
+                                    String email, String phone, String street, String addressLine2,
+                                    String city, String state, String zip,
                                     String employerName, EmploymentStatus employmentStatus, BigDecimal annualIncome) {
         return new Applicant(UUID.randomUUID(), applicationId, firstName, lastName, dateOfBirth,
-                citizenship, ssnToken, email, phone, street, city, state, zip,
+                citizenship, ssnToken, email, phone, street, addressLine2, city, state, zip,
                 employerName, employmentStatus, annualIncome, LocalDateTime.now());
     }
 
     public static Applicant reconstitute(UUID applicantId, UUID applicationId, String firstName, String lastName,
                                           LocalDate dateOfBirth, Citizenship citizenship, String ssnToken,
-                                          String email, String phone, String street, String city, String state, String zip,
+                                          String email, String phone, String street, String addressLine2,
+                                          String city, String state, String zip,
                                           String employerName, EmploymentStatus employmentStatus, BigDecimal annualIncome,
                                           LocalDateTime createdTimestamp) {
         return new Applicant(applicantId, applicationId, firstName, lastName, dateOfBirth,
-                citizenship, ssnToken, email, phone, street, city, state, zip,
+                citizenship, ssnToken, email, phone, street, addressLine2, city, state, zip,
                 employerName, employmentStatus, annualIncome, createdTimestamp);
     }
 
@@ -78,6 +83,7 @@ public class Applicant {
     public String getEmail() { return email; }
     public String getPhone() { return phone; }
     public String getStreet() { return street; }
+    public String getAddressLine2() { return addressLine2; }
     public String getCity() { return city; }
     public String getState() { return state; }
     public String getZip() { return zip; }

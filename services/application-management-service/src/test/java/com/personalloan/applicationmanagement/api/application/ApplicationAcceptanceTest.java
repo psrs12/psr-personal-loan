@@ -25,22 +25,22 @@ class ApplicationAcceptanceTest extends BaseAcceptanceTest {
     }
 
     private Map<String, Object> directApplicationBody(String token) {
-        return Map.of(
-                "ssnVerificationToken", token,
-                "ssn", "123456789",
-                "firstName", "Jane",
-                "lastName", "Doe",
-                "dateOfBirth", "1985-06-15",
-                "citizenship", "US_CITIZEN",
-                "email", "jane@example.com",
-                "phone", "555-5678",
-                "street", "456 Oak Ave",
-                "city", "Chicago",
-                "state", "IL",
-                "zip", "60601",
-                "annualIncome", 90000.00,
-                "requestedAmount", 15000.00,
-                "termMonths", 48
+        return Map.ofEntries(
+                Map.entry("ssnVerificationToken", token),
+                Map.entry("ssn", "123456789"),
+                Map.entry("firstName", "Jane"),
+                Map.entry("lastName", "Doe"),
+                Map.entry("dateOfBirth", "1985-06-15"),
+                Map.entry("citizenship", "US_CITIZEN"),
+                Map.entry("email", "jane@example.com"),
+                Map.entry("phone", "555-5678"),
+                Map.entry("street", "456 Oak Ave"),
+                Map.entry("city", "Chicago"),
+                Map.entry("state", "IL"),
+                Map.entry("zip", "60601"),
+                Map.entry("annualIncome", 90000.00),
+                Map.entry("requestedAmount", 15000.00),
+                Map.entry("termMonths", 48)
         );
     }
 
@@ -70,22 +70,22 @@ class ApplicationAcceptanceTest extends BaseAcceptanceTest {
 
     @Test
     void createApplication_withoutSsnToken_returns400() {
-        Map<String, Object> body = Map.of(
-                "ssnVerificationToken", "invalid-token-xyz",
-                "ssn", "123456789",
-                "firstName", "Jane",
-                "lastName", "Doe",
-                "dateOfBirth", "1985-06-15",
-                "citizenship", "US_CITIZEN",
-                "email", "jane@example.com",
-                "phone", "555-5678",
-                "street", "456 Oak Ave",
-                "city", "Chicago",
-                "state", "IL",
-                "zip", "60601",
-                "annualIncome", 90000.00,
-                "requestedAmount", 15000.00,
-                "termMonths", 48
+        Map<String, Object> body = Map.ofEntries(
+                Map.entry("ssnVerificationToken", "invalid-token-xyz"),
+                Map.entry("ssn", "123456789"),
+                Map.entry("firstName", "Jane"),
+                Map.entry("lastName", "Doe"),
+                Map.entry("dateOfBirth", "1985-06-15"),
+                Map.entry("citizenship", "US_CITIZEN"),
+                Map.entry("email", "jane@example.com"),
+                Map.entry("phone", "555-5678"),
+                Map.entry("street", "456 Oak Ave"),
+                Map.entry("city", "Chicago"),
+                Map.entry("state", "IL"),
+                Map.entry("zip", "60601"),
+                Map.entry("annualIncome", 90000.00),
+                Map.entry("requestedAmount", 15000.00),
+                Map.entry("termMonths", 48)
         );
 
         var request = new HttpEntity<>(body, headers());

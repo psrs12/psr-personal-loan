@@ -48,14 +48,15 @@ class SoftPullOrchestrationServiceTest {
     }
 
     @Test
-    void initiateSoftPull_creditManagementFails_declinesApplicationAndPublishesFailedEvent() {
+    void initiateSoftPull_creditManagementFails_leavesApplicationPendingAndPublishesFailedEvent() {
         UUID applicationId = UUID.randomUUID();
         when(creditManagementPort.initiateSoftPull(applicationId, null))
                 .thenThrow(new RuntimeException("Credit Management unavailable"));
 
         service.initiateSoftPull(applicationId, null);
 
-        verify(applicationManagementPort).updateApplicationStatus(applicationId, "DECLINED");
+        verify(applicationManagementPort).updateApplicationStatus(applicationId, "SOFT_PULL_PENDING");
+        verify(applicationManagementPort, never()).updateApplicationStatus(applicationId, "DECLINED");
         verify(eventPublisher).publishSoftPullFailed(eq(applicationId), anyString());
         verify(pricingRequestAssemblyService, never()).requestPricing(any());
     }

@@ -1,0 +1,43 @@
+// Grafana Alloy configuration
+// Scrapes Prometheus metrics from all services and forwards to Grafana Cloud
+
+prometheus.scrape "personal_loan_services" {
+  targets = [
+    {"__address__" = "application-management-service:8081", "__metrics_path__" = "/api/v1/application-management/actuator/prometheus", "service" = "application-management-service"},
+    {"__address__" = "pricing-orchestration-service:8082", "__metrics_path__" = "/actuator/prometheus", "service" = "pricing-orchestration-service"},
+    {"__address__" = "document-service:8084",              "__metrics_path__" = "/actuator/prometheus", "service" = "document-service"},
+    {"__address__" = "offer-acceptance-service:8085",      "__metrics_path__" = "/actuator/prometheus", "service" = "offer-acceptance-service"},
+  ]
+  scrape_interval = "30s"
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+}
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = env("GRAFANA_CLOUD_PROMETHEUS_URL")
+    basic_auth {
+      username = env("GRAFANA_CLOUD_USER")
+      password = env("GRAFANA_CLOUD_API_KEY")
+    }
+  }
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.containers.targets
+  forward_to = [loki.write.grafana_cloud.receiver]
+}
+
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = env("GRAFANA_CLOUD_LOKI_URL")
+    basic_auth {
+      username = env("GRAFANA_CLOUD_USER")
+      password = env("GRAFANA_CLOUD_API_KEY")
+    }
+  }
+}

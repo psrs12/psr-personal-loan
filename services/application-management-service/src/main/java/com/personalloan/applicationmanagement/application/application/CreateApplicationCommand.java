@@ -18,6 +18,7 @@ public record CreateApplicationCommand(
         String email,
         String phone,
         String street,
+        String addressLine2,
         String city,
         String state,
         String zip,
