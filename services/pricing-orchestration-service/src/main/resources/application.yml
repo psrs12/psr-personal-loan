@@ -53,6 +53,9 @@ kafka:
     consent-events: consent-events
     pricing-events: pricing-events
 
+jwt:
+  secret: ${JWT_SECRET:dev-secret-change-in-production}
+
 resilience4j:
   circuitbreaker:
     instances:

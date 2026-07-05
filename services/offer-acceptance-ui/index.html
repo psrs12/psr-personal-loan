@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offer Acceptance UI — Dev Harness</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+      gap: 1rem;
+    }
+    .card {
+      width: 100%;
+      max-width: 600px;
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <offer-acceptance-flow
+      api-base-url="http://localhost:8085/api/v1/offer-acceptance"
+      pricing-api-base-url="http://localhost:8082/api/v1/pricing-orchestration"
+      application-id="00000000-0000-0000-0000-000000000001"
+      session-token="dev-token"
+    ></offer-acceptance-flow>
+  </div>
+
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

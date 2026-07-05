@@ -34,6 +34,7 @@ ui_services=(
   "application-management-ui"
   "pricing-offers-ui"
   "document-management-ui"
+  "offer-acceptance-ui"
 )
 
 echo ""
@@ -57,6 +58,7 @@ for svc in "${ui_services[@]}"; do
       --build-arg VITE_DOCUMENT_API_URL="${VITE_DOCUMENT_API_URL}" \
       --build-arg VITE_PRICING_OFFERS_UI_JS_URL="${VITE_PRICING_OFFERS_UI_JS_URL}" \
       --build-arg VITE_DOCUMENT_MANAGEMENT_UI_JS_URL="${VITE_DOCUMENT_MANAGEMENT_UI_JS_URL}" \
+      --build-arg VITE_OFFER_ACCEPTANCE_UI_JS_URL="${VITE_OFFER_ACCEPTANCE_UI_JS_URL}" \
       --file "${context}/Dockerfile" \
       --push \
       "${context}"
