@@ -1,0 +1,53 @@
+# End-to-End Flowchart (Mermaid)
+
+Version: 1.0
+Status: Current
+Owner: Personal Loan Acquisition Platform
+
+Visual companion to `01-functional-flow.md` — the same phases, decision branches, and compliance gate placements, rendered as a Mermaid flowchart.
+
+```mermaid
+flowchart TD
+    A["1 · Invitation to Apply\ninvitation-service\nToken validated, name/address\nlocked from invitation"] --> B["2 · Application Completion\napplication-management-service\nSTARTED → IN_PROGRESS → SUBMITTED → PROCESSING"]
+    B -->|ApplicationSubmitted async| C["3 · Evaluation\npricing-orchestration-service\nIdentity + Fraud + Soft Credit Pull\nGate 1: AML pre-screen (async)"]
+    C --> D["4 · Pricing & Offer Presentation\npricing-offers-ui\n<pricing-offer-selector>"]
+    D --> E["5 · Offer Selection & Hard-Pull Consent\npricing-orchestration-service\noffer-confirmed event\nGate 2: FCRA consent (sync, blocking)"]
+    E --> F{"6 · Final Decision\nDecision Engine"}
+
+    F -->|APPROVED| G["7a · Offer Acceptance\noffer-acceptance-service\ne-sign, ESignCompleted\nGate 4: TILA disclosure audit"]
+    F -->|DOCUMENTS_REQUIRED| H["7b · Document Collection\ndocument-service\nACL mapping, upload, virus scan,\nDocumentsCompleted → UNDERWRITING"]
+    F -->|DECLINED| I["Adverse Action\ncompliance-orchestration-service\nGate 3: Adverse action notice"]
+    F -->|REFERRED| J["Manual Underwriting Review\n(no document list)"]
+
+    H --> K["Underwriting Review"]
+    K --> G
+
+    G --> L["8 · Funding\nfunding-request-service (planned)\nFUNDING_PENDING → FUNDED\nGate 5: Pre-funding AML re-check"]
+    L -->|AML flag| M["COMPLIANCE_HOLD\n(suspended, non-terminal)"]
+    M -->|hold released| L
+    M -->|escalated| I
+
+    L --> N["9 · Completed"]
+    I --> O["DECLINED\n(terminal)"]
+
+    classDef phase fill:#e7ecfb,stroke:#2952cc,color:#1b2330;
+    classDef decision fill:#fbf0dd,stroke:#b8790a,color:#1b2330;
+    classDef good fill:#e5f4ec,stroke:#1c8a56,color:#1b2330;
+    classDef bad fill:#fbe9e9,stroke:#c23b3b,color:#1b2330;
+    classDef hold fill:#fbf0dd,stroke:#946200,color:#1b2330;
+
+    class A,B,C,D,E,G,H,K,L phase;
+    class F decision;
+    class N good;
+    class I,O bad;
+    class J,M hold;
+```
+
+## Related Documents
+
+| Document | Location |
+|----------|----------|
+| Functional Flow | `docs/flows/01-functional-flow.md` |
+| Application State Machine | `docs/architecture/002-application-state-machine.md` |
+| Component Interaction Flows | `docs/flows/02-component-interaction-flows.md` |
+| Scenario Flows | `docs/flows/03-scenario-flows.md` |
